@@ -3,1607 +3,841 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Repository Browser</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
-    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.5/base64.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script>
-    <style>
-        :root {
-            --primary-color: #5D5CDE;
-            --primary-hover: #4b4ab2;
-            --background-light: #FFFFFF;
-            --background-dark: #181818;
-            --text-light: #333333;
-            --text-dark: #E0E0E0;
-            --border-light: #E5E7EB;
-            --border-dark: #374151;
-        }
-
-        .dark {
-            color-scheme: dark;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .hljs {
-                background: #1f2937 !important;
+    <title>ArXiv Paper Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
             }
         }
-
-        .dark .hljs {
-            background: #1f2937 !important;
-        }
-
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: rgba(156, 163, 175, 0.5);
-            border-radius: 20px;
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: rgba(75, 85, 99, 0.5);
-        }
-
-        /* Spinner */
-        .spinner {
-            border: 3px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top: 3px solid var(--primary-color);
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .dark .spinner {
-            border-color: rgba(255, 255, 255, 0.1);
-            border-top-color: var(--primary-color);
-        }
-
-        /* File icons */
-        .file-icon {
-            width: 20px;
-            height: 20px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Progress bar */
-        .progress-bar {
-            height: 4px;
-            background-color: #e0e0e0;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background-color: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-
-        .dark .progress-bar {
-            background-color: #374151;
-        }
-
-        /* Content area */
-        #content-viewer {
-            min-height: 300px;
-        }
-
-        .breadcrumb-item {
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .breadcrumb-item:hover {
-            color: var(--primary-color);
-        }
-
-        /* Markdown styling */
-        .markdown-body img {
-            max-width: 100%;
-        }
-
-        .markdown-body h1,
-        .markdown-body h2,
-        .markdown-body h3 {
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .file-entry {
-            transition: background-color 0.2s;
-        }
-
-        .file-entry:hover {
-            background-color: rgba(93, 92, 222, 0.1);
-        }
-
-        .dark .file-entry:hover {
-            background-color: rgba(93, 92, 222, 0.2);
-        }
-
-        /* Code block styling */
-        pre {
-            position: relative;
-            padding: 0.5rem 0;
-        }
-
-        .code-copy-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            padding: 0.25rem 0.5rem;
-            background-color: rgba(209, 213, 219, 0.5);
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            color: #4b5563;
-            cursor: pointer;
-            transition: all 0.2s;
-            z-index: 10;
-        }
-
-        .dark .code-copy-btn {
-            background-color: rgba(75, 85, 99, 0.5);
-            color: #d1d5db;
-        }
-
-        .code-copy-btn:hover {
-            background-color: rgba(209, 213, 219, 0.8);
-        }
-
-        .dark .code-copy-btn:hover {
-            background-color: rgba(75, 85, 99, 0.8);
-        }
-
-        /* Line numbers */
-        .code-with-lines {
-            display: flex;
-        }
-
-        .line-numbers {
-            padding: 1rem 0.5rem;
-            border-right: 1px solid #e5e7eb;
-            background-color: rgba(229, 231, 235, 0.3);
-            color: #6b7280;
-            text-align: right;
-            user-select: none;
-        }
-
-        .dark .line-numbers {
-            border-right-color: #4b5563;
-            background-color: rgba(55, 65, 81, 0.3);
-            color: #9ca3af;
-        }
-
-        .line-content {
-            padding: 1rem;
-            overflow-x: auto;
-            flex-grow: 1;
-        }
-
-        /* Rate limit progress */
-        .rate-limit-bar {
-            height: 6px;
-            background-color: #e0e0e0;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 2px;
-        }
-
-        .rate-limit-fill {
-            height: 100%;
-            background-color: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-
-        .rate-limit-warning .rate-limit-fill {
-            background-color: #f59e0b;
-        }
-
-        .rate-limit-critical .rate-limit-fill {
-            background-color: #ef4444;
-        }
-
-        .dark .rate-limit-bar {
-            background-color: #374151;
-        }
-
-        /* Repository metadata */
-        .repo-meta-item {
-            display: flex;
-            align-items: center;
-            margin-right: 1rem;
-        }
-
-        .repo-meta-item i {
-            margin-right: 0.25rem;
-        }
-
-        /* Search input */
-        .search-input {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'%3E%3C/path%3E%3C/svg%3E");
-            background-position: 0.5rem center;
-            background-repeat: no-repeat;
-            background-size: 1rem;
-            padding-left: 2rem;
-        }
-
-        /* Tooltip */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip .tooltip-text {
-            visibility: hidden;
-            width: 120px;
-            background-color: #374151;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.75rem;
-        }
-
-        .tooltip .tooltip-text::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #374151 transparent transparent transparent;
-        }
-
-        .tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .dark .tooltip .tooltip-text {
-            background-color: #6b7280;
-        }
-
-        .dark .tooltip .tooltip-text::after {
-            border-color: #6b7280 transparent transparent transparent;
-        }
-    </style>
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen transition-colors">
-    <div class="container mx-auto px-4 py-6 max-w-6xl">
-        <h1 class="text-2xl font-bold mb-6 text-center">GitHub Repository Browser</h1>
+<body class="bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-200">
+    <div class="container mx-auto max-w-4xl">
+        <div class="flex justify-between items-center mb-3">
+            <h1 class="text-xl font-bold text-center text-gray-800 dark:text-white">ArXiv Paper Search</h1>
+            <button id="theme-toggle" class="p-2 text-gray-500 dark:text-gray-300">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:block"></i>
+            </button>
+        </div>
         
-        <!-- URL Input Form -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-            <form id="repo-form" class="flex flex-col sm:flex-row gap-2">
+        <!-- Simple Search Form -->
+        <div class="bg-white dark:bg-gray-800 p-3 rounded shadow-sm mb-3">
+            <div class="flex flex-col md:flex-row gap-2">
                 <div class="flex-grow">
-                    <input 
-                        type="text" 
-                        id="repo-url" 
-                        placeholder="Enter GitHub URL (e.g., github.com/username/repo or github.com/username/repo/tree/branch/folder)" 
-                        class="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white text-base"
-                        required
-                    >
+                    <input type="text" id="search-input" placeholder="Search for papers" 
+                           class="w-full p-1.5 border rounded text-base dark:bg-gray-700 dark:text-white dark:border-gray-600">
                 </div>
-                <button 
-                    type="submit" 
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-                    style="background-color: var(--primary-color); hover:background-color: var(--primary-hover);"
-                >
-                    <i class="fas fa-search mr-1"></i> Browse
-                </button>
-            </form>
-        </div>
-
-        <!-- API Rate Limit Info -->
-        <div id="rate-limit-container" class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 hidden">
-            <div class="flex justify-between items-center mb-2">
-                <h3 class="text-sm font-medium">GitHub API Rate Limit</h3>
-                <span id="rate-limit-count" class="text-xs text-gray-500 dark:text-gray-400">0/60 requests</span>
-            </div>
-            <div id="rate-limit-progress" class="rate-limit-bar">
-                <div id="rate-limit-bar" class="rate-limit-fill" style="width: 100%"></div>
-            </div>
-            <p id="rate-limit-reset" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Resets in: N/A</p>
-        </div>
-
-        <!-- Browse Container -->
-        <div id="browse-container" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <!-- Repository Metadata -->
-            <div id="repo-metadata" class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 hidden">
-                <div class="flex flex-wrap items-center gap-y-2">
-                    <!-- Repo metadata will be added here -->
+                <div class="w-full md:w-32">
+                    <select id="results-count" class="w-full p-1.5 border rounded text-base dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <option value="10">10 results</option>
+                        <option value="20">20 results</option>
+                        <option value="50">50 results</option>
+                        <option value="100">100 results</option>
+                        <option value="500">500 results</option>
+                        <option value="1000">Maximum results</option>
+                    </select>
+                </div>
+                <div>
+                    <button id="search-button" class="w-full md:w-auto bg-primary text-white px-3 py-1.5 rounded text-sm">
+                        <i class="fas fa-search mr-1"></i> Search
+                    </button>
                 </div>
             </div>
             
-            <!-- Breadcrumb Navigation -->
-            <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center overflow-x-auto custom-scrollbar">
-                <div id="breadcrumb" class="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-300">
-                    <!-- Breadcrumb items will be added here -->
+            <!-- Search History Dropdown -->
+            <div id="search-history-container" class="mt-2 hidden">
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 flex justify-between items-center">
+                    <span>Recent searches</span>
+                    <button id="clear-history" class="text-xs text-primary">Clear</button>
                 </div>
-            </div>
-
-            <!-- Action Bar -->
-            <div class="flex flex-wrap justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
-                <div class="text-sm font-medium mr-2">
-                    <span id="repo-info"></span>
-                </div>
-                <div class="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                    <!-- Search input for current directory -->
-                    <div class="w-full sm:w-auto">
-                        <input 
-                            type="text" 
-                            id="search-files" 
-                            placeholder="Search in this directory" 
-                            class="search-input w-full px-4 py-1 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
-                        >
-                    </div>
-                    <button id="download-btn" class="hidden text-xs sm:text-sm px-2 sm:px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500" style="background-color: var(--primary-color);">
-                        <i class="fas fa-download mr-1"></i> <span class="hidden sm:inline">Download</span>
-                    </button>
-                    <button id="compress-btn" class="hidden text-xs sm:text-sm px-2 sm:px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500" style="background-color: var(--primary-color);">
-                        <i class="fas fa-file-archive mr-1"></i> <span class="hidden sm:inline">Compress & Download</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="flex flex-col md:flex-row">
-                <!-- File Browser -->
-                <div class="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div id="file-explorer" class="custom-scrollbar h-64 md:h-[calc(100vh-24rem)] overflow-y-auto">
-                        <!-- Loading spinner -->
-                        <div id="loading-files" class="p-6 flex flex-col items-center justify-center">
-                            <div class="spinner mb-3"></div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Loading repository contents...</p>
-                        </div>
-                        <div id="file-list" class="hidden">
-                            <!-- File list will be populated here -->
-                        </div>
-                        <div id="no-results" class="hidden p-6 text-center text-gray-500 dark:text-gray-400">
-                            <i class="fas fa-search text-2xl mb-2"></i>
-                            <p>No matching files found</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Content Viewer -->
-                <div class="w-full md:w-2/3">
-                    <div id="content-container" class="relative">
-                        <!-- Content loading indicator -->
-                        <div id="loading-content" class="hidden absolute inset-0 bg-white dark:bg-gray-800 bg-opacity-80 dark:bg-opacity-80 flex items-center justify-center">
-                            <div class="spinner"></div>
-                        </div>
-                        
-                        <!-- Content viewer -->
-                        <div id="content-viewer" class="p-4 h-96 md:h-[calc(100vh-24rem)] overflow-auto custom-scrollbar">
-                            <div class="flex items-center justify-center h-full text-gray-400">
-                                <div class="text-center">
-                                    <i class="fas fa-folder-open text-4xl mb-3"></i>
-                                    <p>Select a file to view its contents</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div id="search-history" class="text-sm space-y-1 max-h-32 overflow-y-auto"></div>
             </div>
         </div>
 
-        <!-- Download Progress Modal -->
-        <div id="download-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-                <h3 class="text-lg font-medium mb-4">Downloading Repository</h3>
-                <div class="mb-4">
-                    <p id="download-status" class="text-sm mb-2">Preparing files...</p>
-                    <div class="progress-bar">
-                        <div id="download-progress" class="progress-bar-fill" style="width: 0%"></div>
-                    </div>
-                </div>
-                <p id="download-message" class="text-sm text-gray-500 dark:text-gray-400 mb-4">This may take a moment depending on the repository size.</p>
-                <div class="flex justify-end">
-                    <button id="cancel-download" class="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
-                        Cancel
-                    </button>
-                </div>
-            </div>
+        <!-- Tab Navigation -->
+        <div class="flex mb-4 border-b dark:border-gray-700">
+            <button id="results-tab" class="py-2 px-4 border-b-2 border-primary text-primary dark:text-white">Results</button>
+            <button id="library-tab" class="py-2 px-4 border-b-2 border-transparent dark:text-gray-300">Library (<span id="saved-count">0</span>)</button>
         </div>
-
-        <!-- Error Modal -->
-        <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-red-600 dark:text-red-400">Error</h3>
-                    <button id="close-error" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="mb-4">
-                    <p id="error-message" class="text-sm text-gray-700 dark:text-gray-300"></p>
-                </div>
-                <div id="error-details" class="mb-4 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 p-3 rounded overflow-auto max-h-40 hidden"></div>
-                <div class="flex justify-end">
-                    <button id="error-ok" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors" style="background-color: var(--primary-color);">
-                        OK
-                    </button>
-                </div>
+        
+        <!-- Results Section -->
+        <div id="results-section">
+            <div id="loading" class="hidden flex justify-center p-10">
+                <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
+            <div id="search-message" class="text-center p-10 text-gray-500 dark:text-gray-400">
+                Enter your search terms and press Search to find papers
+            </div>
+            <div id="results-info" class="text-sm text-gray-600 dark:text-gray-400 mb-2 hidden">
+                <span id="results-count-display"></span>
+            </div>
+            <div id="save-all-container" class="hidden mb-3 flex justify-end">
+                <button id="save-all-btn" class="bg-primary text-white px-3 py-1 rounded text-sm">
+                    <i class="fas fa-star mr-1"></i> Save All Results
+                </button>
+            </div>
+            <div id="search-results" class="space-y-1.5"></div>
         </div>
-
-        <!-- Retry Modal -->
-        <div id="retry-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-yellow-600 dark:text-yellow-400">Request Failed</h3>
-                    <button id="close-retry" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="mb-4">
-                    <p id="retry-message" class="text-sm text-gray-700 dark:text-gray-300">The request to GitHub API failed. This might be due to a temporary network issue.</p>
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button id="cancel-retry" class="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                        Cancel
-                    </button>
-                    <button id="confirm-retry" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors" style="background-color: var(--primary-color);">
-                        Retry
+        
+        <!-- Library Section -->
+        <div id="library-section" class="hidden">
+            <div class="flex justify-between mb-2">
+                <h2 class="text-lg font-bold dark:text-white">Saved Papers</h2>
+                <div class="flex gap-2">
+                    <select id="export-format" class="text-sm p-1 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <option value="csv">CSV Format</option>
+                        <option value="bibtex">BibTeX Format</option>
+                    </select>
+                    <button id="export-btn" class="bg-primary text-white px-3 py-1 text-sm rounded" disabled>
+                        <i class="fas fa-file-export mr-1"></i> Export
                     </button>
                 </div>
             </div>
+            <div id="library-empty" class="text-center p-4 text-gray-500 dark:text-gray-400 text-sm">
+                Your library is empty
+            </div>
+            <div id="library-items" class="space-y-2"></div>
         </div>
     </div>
 
     <script>
-        // Dark mode detection
-        function setupDarkMode() {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // State management
+        let savedPapers = [];
+        let searchResults = [];
+        let searchHistory = [];
+        const MAX_HISTORY_ITEMS = 5;
+        
+        // DOM Elements
+        const searchInput = document.getElementById('search-input');
+        const resultsCount = document.getElementById('results-count');
+        const searchButton = document.getElementById('search-button');
+        const resultsTab = document.getElementById('results-tab');
+        const libraryTab = document.getElementById('library-tab');
+        const resultsSection = document.getElementById('results-section');
+        const librarySection = document.getElementById('library-section');
+        const loading = document.getElementById('loading');
+        const searchMessage = document.getElementById('search-message');
+        const searchResultsElement = document.getElementById('search-results');
+        const savedCount = document.getElementById('saved-count');
+        const libraryEmpty = document.getElementById('library-empty');
+        const libraryItems = document.getElementById('library-items');
+        const saveAllBtn = document.getElementById('save-all-btn');
+        const saveAllContainer = document.getElementById('save-all-container');
+        const exportBtn = document.getElementById('export-btn');
+        const exportFormat = document.getElementById('export-format');
+        const resultsInfo = document.getElementById('results-info');
+        const resultsCountDisplay = document.getElementById('results-count-display');
+        const themeToggle = document.getElementById('theme-toggle');
+        const searchHistoryContainer = document.getElementById('search-history-container');
+        const searchHistoryElement = document.getElementById('search-history');
+        const clearHistoryBtn = document.getElementById('clear-history');
+        
+        // Dark mode detection and toggle
+        function initTheme() {
+            if (localStorage.getItem('dark-mode') === 'true' || 
+                (localStorage.getItem('dark-mode') === null && 
+                window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             }
-            
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                if (event.matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            });
         }
-
-        // Main application logic
-        document.addEventListener('DOMContentLoaded', function() {
-            setupDarkMode();
-            
-            // Elements
-            const repoForm = document.getElementById('repo-form');
-            const repoUrlInput = document.getElementById('repo-url');
-            const browseContainer = document.getElementById('browse-container');
-            const fileExplorer = document.getElementById('file-explorer');
-            const fileList = document.getElementById('file-list');
-            const contentViewer = document.getElementById('content-viewer');
-            const breadcrumb = document.getElementById('breadcrumb');
-            const repoInfo = document.getElementById('repo-info');
-            const repoMetadata = document.getElementById('repo-metadata');
-            const downloadBtn = document.getElementById('download-btn');
-            const compressBtn = document.getElementById('compress-btn');
-            const loadingFiles = document.getElementById('loading-files');
-            const loadingContent = document.getElementById('loading-content');
-            const downloadModal = document.getElementById('download-modal');
-            const downloadStatus = document.getElementById('download-status');
-            const downloadProgress = document.getElementById('download-progress');
-            const cancelDownload = document.getElementById('cancel-download');
-            const errorModal = document.getElementById('error-modal');
-            const errorMessage = document.getElementById('error-message');
-            const errorDetails = document.getElementById('error-details');
-            const closeError = document.getElementById('close-error');
-            const errorOk = document.getElementById('error-ok');
-            const retryModal = document.getElementById('retry-modal');
-            const retryMessage = document.getElementById('retry-message');
-            const closeRetry = document.getElementById('close-retry');
-            const cancelRetry = document.getElementById('cancel-retry');
-            const confirmRetry = document.getElementById('confirm-retry');
-            const searchFiles = document.getElementById('search-files');
-            const noResults = document.getElementById('no-results');
-            const rateLimitContainer = document.getElementById('rate-limit-container');
-            const rateLimitCount = document.getElementById('rate-limit-count');
-            const rateLimitBar = document.getElementById('rate-limit-bar');
-            const rateLimitReset = document.getElementById('rate-limit-reset');
-            const rateLimitProgress = document.getElementById('rate-limit-progress');
-
-            // State variables
-            let currentRepo = null;
-            let currentBranch = null;
-            let currentPath = [];
-            let currentFiles = [];
-            let abortController = null;
-            let retryCallback = null;
-            let retryCount = 0;
-            let rateLimitRemaining = 60;
-            let rateLimitTotal = 60;
-            let rateLimitResetTime = null;
-            let cacheExpiration = 5 * 60 * 1000; // 5 minutes
-            
-            // Initialize syntax highlighting
-            hljs.configure({
-                languages: ['javascript', 'python', 'java', 'html', 'css', 'bash', 'json', 'typescript', 'go', 'rust', 'c', 'cpp']
-            });
-            
-            // Initialize marked
-            marked.setOptions({
-                highlight: function(code, lang) {
-                    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                    return hljs.highlight(code, { language }).value;
-                },
-                langPrefix: 'hljs language-'
-            });
-
-            // Initialize clipboard for copy code functionality
-            const clipboard = new ClipboardJS('.code-copy-btn');
-            clipboard.on('success', function(e) {
-                const btn = e.trigger;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                
-                setTimeout(function() {
-                    btn.textContent = originalText;
-                }, 1500);
-                
-                e.clearSelection();
-            });
-
-            // Handle form submission
-            repoForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const url = repoUrlInput.value.trim();
-                if (url) {
-                    parseGitHubUrl(url);
-                }
-            });
-
-            // Close error modal handlers
-            closeError.addEventListener('click', hideErrorModal);
-            errorOk.addEventListener('click', hideErrorModal);
-            
-            // Retry modal handlers
-            closeRetry.addEventListener('click', hideRetryModal);
-            cancelRetry.addEventListener('click', hideRetryModal);
-            confirmRetry.addEventListener('click', function() {
-                hideRetryModal();
-                if (retryCallback) {
-                    retryCallback();
-                }
-            });
-            
-            // Cancel download handler
-            cancelDownload.addEventListener('click', function() {
-                if (abortController) {
-                    abortController.abort();
-                    abortController = null;
-                }
-                downloadModal.classList.add('hidden');
-            });
-
-            // Search files handler
-            searchFiles.addEventListener('input', function() {
-                const query = this.value.trim().toLowerCase();
-                filterFiles(query);
-            });
-            
-            // Cache management
-            function getCachedData(key) {
+        
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('dark-mode', document.documentElement.classList.contains('dark'));
+        });
+        
+        // Initialize theme on load
+        initTheme();
+        
+        // Load saved papers from localStorage
+        function loadSavedPapers() {
+            const saved = localStorage.getItem('arxiv-saved-papers');
+            if (saved) {
                 try {
-                    const cachedData = sessionStorage.getItem(key);
-                    if (!cachedData) return null;
-                    
-                    const { data, timestamp } = JSON.parse(cachedData);
-                    if (Date.now() - timestamp > cacheExpiration) {
-                        sessionStorage.removeItem(key);
-                        return null;
-                    }
-                    
-                    return data;
-                } catch (error) {
-                    console.warn('Error accessing cache:', error);
-                    return null;
+                    savedPapers = JSON.parse(saved);
+                    savedCount.textContent = savedPapers.length;
+                    exportBtn.disabled = savedPapers.length === 0;
+                } catch (e) {
+                    console.error('Error loading saved papers:', e);
+                    savedPapers = [];
                 }
             }
-
-            function setCachedData(key, data) {
+        }
+        
+        // Save papers to localStorage
+        function savePapersToStorage() {
+            localStorage.setItem('arxiv-saved-papers', JSON.stringify(savedPapers));
+            savedCount.textContent = savedPapers.length;
+            exportBtn.disabled = savedPapers.length === 0;
+        }
+        
+        // Load search history from localStorage
+        function loadSearchHistory() {
+            const history = localStorage.getItem('arxiv-search-history');
+            if (history) {
                 try {
-                    const cacheData = {
-                        timestamp: Date.now(),
-                        data: data
-                    };
-                    sessionStorage.setItem(key, JSON.stringify(cacheData));
-                } catch (error) {
-                    console.warn('Error saving to cache:', error);
+                    searchHistory = JSON.parse(history);
+                    updateSearchHistoryUI();
+                } catch (e) {
+                    console.error('Error loading search history:', e);
+                    searchHistory = [];
                 }
             }
-
-            // Parse GitHub URL
-            function parseGitHubUrl(url) {
-                try {
-                    // Remove protocol if present
-                    url = url.replace(/^(https?:\/\/)?(www\.)?github\.com\//, '');
-                    
-                    const parts = url.split('/');
-                    if (parts.length < 2) {
-                        throw new Error('Invalid GitHub URL. Please provide a valid repository URL.');
-                    }
-                    
-                    const owner = parts[0];
-                    const repo = parts[1];
-                    
-                    // Reset state
-                    currentRepo = { owner, name: repo };
-                    currentPath = [];
-                    
-                    // Determine if URL points to a specific branch, folder or file
-                    if (parts.length > 2) {
-                        if (parts[2] === 'tree' || parts[2] === 'blob') {
-                            // Format: username/repo/tree|blob/branch/[path/to/folder|file]
-                            if (parts.length < 4) {
-                                throw new Error('Invalid GitHub URL. Branch name is missing.');
-                            }
-                            
-                            currentBranch = parts[3];
-                            
-                            // Get path if present
-                            if (parts.length > 4) {
-                                currentPath = parts.slice(4);
-                            }
-                        } else {
-                            // Assume default branch and treat the rest as path
-                            currentBranch = null; // Will fetch default branch
-                            currentPath = parts.slice(2);
-                        }
-                    } else {
-                        // Just username/repo, use default branch
-                        currentBranch = null;
-                    }
-
-                    // Reset search input
-                    searchFiles.value = '';
-                    
-                    // Start fetching repository content
-                    browseContainer.classList.remove('hidden');
-                    fetchRepositoryContent();
-                    
-                } catch (error) {
-                    showError('URL Parsing Error', error.message);
-                }
-            }
-
-            // Fetch repository content
-            async function fetchRepositoryContent() {
-                showLoadingFiles();
-                hideContentViewer();
-                updateBreadcrumb();
+        }
+        
+        // Save search history to localStorage
+        function saveSearchHistory() {
+            localStorage.setItem('arxiv-search-history', JSON.stringify(searchHistory));
+            updateSearchHistoryUI();
+        }
+        
+        // Update search history UI
+        function updateSearchHistoryUI() {
+            if (searchHistory.length > 0) {
+                searchHistoryContainer.classList.remove('hidden');
+                searchHistoryElement.innerHTML = '';
                 
-                try {
-                    // Fetch repository info to get default branch if needed
-                    if (!currentBranch) {
-                        const repoInfo = await fetchRepoInfo();
-                        currentBranch = repoInfo.default_branch;
-                        
-                        // Display repository metadata
-                        displayRepoMetadata(repoInfo);
-                    } else if (!repoMetadata.innerHTML.trim()) {
-                        // If metadata not yet fetched but we have the branch
-                        const repoInfo = await fetchRepoInfo();
-                        displayRepoMetadata(repoInfo);
-                    }
-                    
-                    // Update repository info display
-                    updateRepoInfo();
-                    
-                    // Fetch contents of current path
-                    const contents = await fetchContents();
-                    
-                    // Display contents in file explorer
-                    displayContents(contents);
-                    
-                } catch (error) {
-                    console.error('Error fetching repository content:', error);
-                    if (error.name !== 'AbortError') {
-                        showError('Repository Error', 'Failed to fetch repository content. ' + error.message);
-                    }
-                }
-            }
-
-            // Fetch repository info
-            async function fetchRepoInfo() {
-                const cacheKey = `repo_${currentRepo.owner}_${currentRepo.name}`;
-                const cachedData = getCachedData(cacheKey);
-                
-                if (cachedData) {
-                    return cachedData;
-                }
-                
-                const url = `https://api.github.com/repos/${currentRepo.owner}/${currentRepo.name}`;
-                
-                try {
-                    const response = await fetchWithRetry(url, {}, 3);
-                    
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            throw new Error('Repository not found. Please check the URL and try again.');
-                        } else if (response.status === 403) {
-                            throw new Error('API rate limit exceeded. Please try again later.');
-                        } else {
-                            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
-                        }
-                    }
-                    
-                    // Update rate limit information
-                    updateRateLimitInfo(response.headers);
-                    
-                    const data = await response.json();
-                    setCachedData(cacheKey, data);
-                    return data;
-                    
-                } catch (error) {
-                    console.error('Error fetching repo info:', error);
-                    throw error;
-                }
-            }
-
-            // Fetch contents of current path
-            async function fetchContents() {
-                const path = currentPath.join('/');
-                const cacheKey = `contents_${currentRepo.owner}_${currentRepo.name}_${currentBranch}_${path}`;
-                const cachedData = getCachedData(cacheKey);
-                
-                if (cachedData) {
-                    return cachedData;
-                }
-                
-                const url = `https://api.github.com/repos/${currentRepo.owner}/${currentRepo.name}/contents/${path}?ref=${currentBranch}`;
-                
-                try {
-                    const response = await fetchWithRetry(url, {}, 3);
-                    
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            throw new Error('Path not found. The folder or file may not exist in this branch.');
-                        } else if (response.status === 403) {
-                            throw new Error('API rate limit exceeded. Please try again later.');
-                        } else {
-                            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
-                        }
-                    }
-                    
-                    // Update rate limit information
-                    updateRateLimitInfo(response.headers);
-                    
-                    const data = await response.json();
-                    setCachedData(cacheKey, data);
-                    return data;
-                    
-                } catch (error) {
-                    console.error('Error fetching contents:', error);
-                    throw error;
-                }
-            }
-
-            // Helper function for fetch with retry
-            async function fetchWithRetry(url, options = {}, maxRetries = 3) {
-                let retries = 0;
-                
-                while (retries < maxRetries) {
-                    try {
-                        return await fetch(url, options);
-                    } catch (error) {
-                        retries++;
-                        console.warn(`Fetch attempt ${retries} failed:`, error);
-                        
-                        if (retries >= maxRetries) {
-                            throw error;
-                        }
-                        
-                        // Exponential backoff
-                        const delay = Math.min(1000 * Math.pow(2, retries), 10000);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
-                }
-            }
-
-            // Update repository info display
-            function updateRepoInfo() {
-                repoInfo.textContent = `${currentRepo.owner}/${currentRepo.name} (${currentBranch})`;
-            }
-
-            // Display repository metadata
-            function displayRepoMetadata(repoData) {
-                repoMetadata.innerHTML = '';
-                
-                // Create metadata elements
-                const metadataItems = [
-                    { icon: 'fa-star', value: repoData.stargazers_count.toLocaleString(), label: 'Stars' },
-                    { icon: 'fa-code-fork', value: repoData.forks_count.toLocaleString(), label: 'Forks' },
-                    { icon: 'fa-exclamation-circle', value: repoData.open_issues_count.toLocaleString(), label: 'Issues' },
-                    { icon: 'fa-eye', value: repoData.watchers_count.toLocaleString(), label: 'Watchers' }
-                ];
-                
-                // License information if available
-                if (repoData.license) {
-                    metadataItems.push({ icon: 'fa-balance-scale', value: repoData.license.name, label: 'License' });
-                }
-                
-                // Last updated
-                if (repoData.updated_at) {
-                    const lastUpdated = new Date(repoData.updated_at);
-                    metadataItems.push({ 
-                        icon: 'fa-clock', 
-                        value: lastUpdated.toLocaleDateString(), 
-                        label: 'Updated' 
+                searchHistory.forEach(query => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded';
+                    historyItem.textContent = query;
+                    historyItem.addEventListener('click', () => {
+                        searchInput.value = query;
+                        searchHistoryContainer.classList.add('hidden');
                     });
-                }
-                
-                // Create HTML elements for metadata
-                metadataItems.forEach(item => {
-                    const metaItem = document.createElement('div');
-                    metaItem.className = 'repo-meta-item tooltip';
-                    metaItem.innerHTML = `
-                        <i class="fas ${item.icon} text-gray-500 dark:text-gray-400"></i>
-                        <span class="text-sm">${item.value}</span>
-                        <span class="tooltip-text">${item.label}</span>
-                    `;
-                    repoMetadata.appendChild(metaItem);
+                    searchHistoryElement.appendChild(historyItem);
                 });
-                
-                // Add repository description if available
-                if (repoData.description) {
-                    const descDiv = document.createElement('div');
-                    descDiv.className = 'w-full mt-2 text-sm text-gray-600 dark:text-gray-400';
-                    descDiv.textContent = repoData.description;
-                    repoMetadata.appendChild(descDiv);
-                }
-                
-                // Show the metadata container
-                repoMetadata.classList.remove('hidden');
+            } else {
+                searchHistoryContainer.classList.add('hidden');
             }
-
-            // Update rate limit information
-            function updateRateLimitInfo(headers) {
-                const remaining = headers.get('X-RateLimit-Remaining');
-                const limit = headers.get('X-RateLimit-Limit');
-                const reset = headers.get('X-RateLimit-Reset');
-                
-                if (remaining && limit && reset) {
-                    rateLimitRemaining = parseInt(remaining);
-                    rateLimitTotal = parseInt(limit);
-                    rateLimitResetTime = new Date(parseInt(reset) * 1000);
-                    
-                    // Update rate limit display
-                    updateRateLimitDisplay();
-                    
-                    // Show rate limit container if not already visible
-                    rateLimitContainer.classList.remove('hidden');
-                }
+        }
+        
+        // Add to search history
+        function addToSearchHistory(query) {
+            // Remove if exists already (to bring to top)
+            searchHistory = searchHistory.filter(item => item !== query);
+            
+            // Add to beginning
+            searchHistory.unshift(query);
+            
+            // Limit history size
+            if (searchHistory.length > MAX_HISTORY_ITEMS) {
+                searchHistory = searchHistory.slice(0, MAX_HISTORY_ITEMS);
             }
-
-            // Update rate limit display
-            function updateRateLimitDisplay() {
-                // Update count text
-                rateLimitCount.textContent = `${rateLimitRemaining}/${rateLimitTotal} requests`;
-                
-                // Update progress bar
-                const percentRemaining = (rateLimitRemaining / rateLimitTotal) * 100;
-                rateLimitBar.style.width = `${percentRemaining}%`;
-                
-                // Update colors based on remaining requests
-                rateLimitProgress.classList.remove('rate-limit-warning', 'rate-limit-critical');
-                if (percentRemaining <= 10) {
-                    rateLimitProgress.classList.add('rate-limit-critical');
-                } else if (percentRemaining <= 25) {
-                    rateLimitProgress.classList.add('rate-limit-warning');
-                }
-                
-                // Update reset time
-                if (rateLimitResetTime) {
-                    const now = new Date();
-                    const diffMs = rateLimitResetTime - now;
-                    
-                    if (diffMs > 0) {
-                        const diffMins = Math.ceil(diffMs / (1000 * 60));
-                        rateLimitReset.textContent = `Resets in: ${diffMins} minute${diffMins !== 1 ? 's' : ''}`;
-                        
-                        // Schedule next update
-                        setTimeout(updateRateLimitDisplay, 60000); // Update every minute
-                    } else {
-                        rateLimitReset.textContent = 'Resets soon';
-                    }
-                } else {
-                    rateLimitReset.textContent = 'Reset time unknown';
-                }
+            
+            saveSearchHistory();
+        }
+        
+        // Clear search history
+        clearHistoryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchHistory = [];
+            saveSearchHistory();
+            searchHistoryContainer.classList.add('hidden');
+        });
+        
+        // Show search history when input is focused
+        searchInput.addEventListener('focus', () => {
+            if (searchHistory.length > 0) {
+                searchHistoryContainer.classList.remove('hidden');
             }
-
-            // Display contents in file explorer
-            function displayContents(contents) {
-                currentFiles = Array.isArray(contents) ? contents : [contents];
-                
-                // If it's a single file, display its content
-                if (!Array.isArray(contents)) {
-                    viewFile(contents);
-                    hideLoadingFiles();
-                    return;
-                }
-                
-                // Sort: directories first, then files, alphabetically
-                currentFiles.sort((a, b) => {
-                    if (a.type !== b.type) {
-                        return a.type === 'dir' ? -1 : 1;
-                    }
-                    return a.name.localeCompare(b.name);
-                });
-                
-                // Clear current list and generate new items
-                fileList.innerHTML = '';
-                
-                // Create list items for each file/directory
-                currentFiles.forEach(item => {
-                    const listItem = document.createElement('div');
-                    listItem.className = 'file-entry p-2 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer flex items-center';
-                    listItem.dataset.name = item.name.toLowerCase();
-                    
-                    // Icon based on file type
-                    const icon = getFileIcon(item);
-                    
-                    // Format the file size if it's a file
-                    const sizeDisplay = item.type === 'file' ? `<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">${formatFileSize(item.size)}</span>` : '';
-                    
-                    listItem.innerHTML = `
-                        <div class="file-icon mr-3">${icon}</div>
-                        <div class="flex-grow truncate">${item.name}</div>
-                        ${sizeDisplay}
-                    `;
-                    
-                    // Add click handler
-                    listItem.addEventListener('click', () => {
-                        if (item.type === 'dir') {
-                            navigateToFolder(item.name);
-                        } else {
-                            viewFile(item);
-                        }
-                    });
-                    
-                    fileList.appendChild(listItem);
-                });
-                
-                // Show file list and hide loading
-                fileList.classList.remove('hidden');
-                hideLoadingFiles();
-                
-                // Show/hide download and compress buttons
-                updateActionButtons();
+        });
+        
+        // Hide search history when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchHistoryContainer.contains(e.target) && e.target !== searchInput) {
+                searchHistoryContainer.classList.add('hidden');
             }
-
-            // Format file size
-            function formatFileSize(bytes) {
-                if (bytes < 1024) {
-                    return bytes + ' B';
-                } else if (bytes < 1024 * 1024) {
-                    return (bytes / 1024).toFixed(1) + ' KB';
-                } else if (bytes < 1024 * 1024 * 1024) {
-                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-                } else {
-                    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
-                }
+        });
+        
+        // Tab switching
+        resultsTab.addEventListener('click', () => {
+            resultsTab.classList.add('border-primary', 'text-primary');
+            libraryTab.classList.remove('border-primary', 'text-primary');
+            resultsSection.classList.remove('hidden');
+            librarySection.classList.add('hidden');
+        });
+        
+        libraryTab.addEventListener('click', () => {
+            libraryTab.classList.add('border-primary', 'text-primary');
+            resultsTab.classList.remove('border-primary', 'text-primary');
+            librarySection.classList.remove('hidden');
+            resultsSection.classList.add('hidden');
+            renderLibrary();
+        });
+        
+        // Allow Enter key to search
+        searchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                searchButton.click();
             }
-
-            // Filter files based on search query
-            function filterFiles(query) {
-                const fileEntries = fileList.querySelectorAll('.file-entry');
-                let visibleCount = 0;
-                
-                fileEntries.forEach(entry => {
-                    const fileName = entry.dataset.name || '';
-                    
-                    if (!query || fileName.includes(query.toLowerCase())) {
-                        entry.classList.remove('hidden');
-                        visibleCount++;
-                    } else {
-                        entry.classList.add('hidden');
-                    }
-                });
-                
-                // Show/hide no results message
-                if (visibleCount === 0 && query) {
-                    noResults.classList.remove('hidden');
-                    fileList.classList.add('hidden');
-                } else {
-                    noResults.classList.add('hidden');
-                    fileList.classList.remove('hidden');
-                }
+        });
+        
+        // Extract more detailed information from ArXiv entry
+        function extractPaperDetails(entry) {
+            const id = entry.getElementsByTagName('id')[0]?.textContent || '';
+            const arxivId = id.split('/').pop();
+            const title = entry.getElementsByTagName('title')[0]?.textContent || 'No title';
+            const summary = entry.getElementsByTagName('summary')[0]?.textContent || '';
+            const published = entry.getElementsByTagName('published')[0]?.textContent || '';
+            const updated = entry.getElementsByTagName('updated')[0]?.textContent || '';
+            
+            // Extract authors
+            const authorElements = entry.getElementsByTagName('author');
+            const authors = Array.from(authorElements).map(author => {
+                return author.getElementsByTagName('name')[0]?.textContent || '';
+            });
+            
+            // Extract categories
+            const categories = [];
+            const categoryElements = entry.getElementsByTagName('category');
+            for (let i = 0; i < categoryElements.length; i++) {
+                const term = categoryElements[i].getAttribute('term');
+                if (term) categories.push(term);
             }
-
-            // Get appropriate icon for a file or directory
-            function getFileIcon(item) {
-                if (item.type === 'dir') {
-                    return '<i class="fas fa-folder text-yellow-500"></i>';
-                }
-                
-                // Determine icon based on file extension
-                const extension = item.name.split('.').pop().toLowerCase();
-                
-                const iconMap = {
-                    'js': '<i class="fab fa-js-square text-yellow-400"></i>',
-                    'ts': '<i class="fab fa-js-square text-blue-500"></i>',
-                    'html': '<i class="fab fa-html5 text-orange-500"></i>',
-                    'css': '<i class="fab fa-css3-alt text-blue-500"></i>',
-                    'scss': '<i class="fab fa-sass text-pink-500"></i>',
-                    'md': '<i class="fas fa-file-alt text-gray-500"></i>',
-                    'json': '<i class="fas fa-brackets-curly text-gray-500"></i>',
-                    'py': '<i class="fab fa-python text-blue-600"></i>',
-                    'java': '<i class="fab fa-java text-red-600"></i>',
-                    'rb': '<i class="fas fa-gem text-red-500"></i>',
-                    'php': '<i class="fab fa-php text-purple-500"></i>',
-                    'c': '<i class="fas fa-file-code text-blue-400"></i>',
-                    'cpp': '<i class="fas fa-file-code text-blue-500"></i>',
-                    'h': '<i class="fas fa-file-code text-blue-300"></i>',
-                    'go': '<i class="fas fa-file-code text-cyan-500"></i>',
-                    'rs': '<i class="fas fa-file-code text-orange-600"></i>',
-                    'sh': '<i class="fas fa-terminal text-green-500"></i>',
-                    'bat': '<i class="fas fa-terminal text-gray-500"></i>',
-                    'ps1': '<i class="fas fa-terminal text-blue-500"></i>',
-                    'jpg': '<i class="fas fa-file-image text-purple-400"></i>',
-                    'jpeg': '<i class="fas fa-file-image text-purple-400"></i>',
-                    'png': '<i class="fas fa-file-image text-green-400"></i>',
-                    'gif': '<i class="fas fa-file-image text-blue-400"></i>',
-                    'svg': '<i class="fas fa-file-image text-orange-400"></i>',
-                    'pdf': '<i class="fas fa-file-pdf text-red-500"></i>',
-                    'zip': '<i class="fas fa-file-archive text-yellow-600"></i>',
-                    'tar': '<i class="fas fa-file-archive text-brown-500"></i>',
-                    'gz': '<i class="fas fa-file-archive text-red-400"></i>',
-                    'mp3': '<i class="fas fa-file-audio text-blue-400"></i>',
-                    'wav': '<i class="fas fa-file-audio text-purple-400"></i>',
-                    'mp4': '<i class="fas fa-file-video text-red-400"></i>',
-                    'mov': '<i class="fas fa-file-video text-blue-500"></i>',
-                    'txt': '<i class="fas fa-file-alt text-gray-500"></i>',
-                    'log': '<i class="fas fa-file-alt text-gray-400"></i>'
-                };
-                
-                return iconMap[extension] || '<i class="fas fa-file text-gray-400"></i>';
-            }
-
-            // Navigate to a folder
-            function navigateToFolder(folderName) {
-                // Reset search when navigating
-                searchFiles.value = '';
-                
-                currentPath.push(folderName);
-                fetchRepositoryContent();
-            }
-
-            // Navigate using breadcrumb
-            function navigateBreadcrumb(index) {
-                // Reset search when navigating
-                searchFiles.value = '';
-                
-                if (index < 0) {
-                    // Repository root
-                    currentPath = [];
-                } else {
-                    // Truncate path at the clicked index
-                    currentPath = currentPath.slice(0, index + 1);
-                }
-                
-                fetchRepositoryContent();
-            }
-
-            // Update breadcrumb navigation
-            function updateBreadcrumb() {
-                breadcrumb.innerHTML = '';
-                
-                // Add repository root
-                const rootItem = document.createElement('span');
-                rootItem.className = 'breadcrumb-item flex items-center';
-                rootItem.innerHTML = '<i class="fas fa-home mr-1"></i> Root';
-                rootItem.addEventListener('click', () => navigateBreadcrumb(-1));
-                breadcrumb.appendChild(rootItem);
-                
-                // Add separator after root
-                if (currentPath.length > 0) {
-                    const separator = document.createElement('span');
-                    separator.className = 'mx-1 text-gray-400';
-                    separator.textContent = '/';
-                    breadcrumb.appendChild(separator);
-                }
-                
-                // Add path segments
-                currentPath.forEach((segment, index) => {
-                    const item = document.createElement('span');
-                    item.className = 'breadcrumb-item';
-                    item.textContent = segment;
-                    item.addEventListener('click', () => navigateBreadcrumb(index));
-                    breadcrumb.appendChild(item);
-                    
-                    // Add separator if not the last item
-                    if (index < currentPath.length - 1) {
-                        const separator = document.createElement('span');
-                        separator.className = 'mx-1 text-gray-400';
-                        separator.textContent = '/';
-                        breadcrumb.appendChild(separator);
-                    }
-                });
-            }
-
-            // View file content
-            async function viewFile(file) {
-                showLoadingContent();
-                
+            
+            // Format date for display
+            const formatDate = (dateStr) => {
+                if (!dateStr) return '';
                 try {
-                    let content;
-                    let contentType;
-                    
-                    // Cache key for file content
-                    const contentCacheKey = `file_${currentRepo.owner}_${currentRepo.name}_${currentBranch}_${file.path}`;
-                    
-                    // If file is too large (> 1MB), add a warning
-                    if (file.size > 1000000) {
-                        contentViewer.innerHTML = `
-                            <div class="p-4 bg-yellow-50 dark:bg-yellow-900 border-l-4 border-yellow-400 text-yellow-800 dark:text-yellow-200 mb-4">
-                                <p class="font-medium">Warning: Large File</p>
-                                <p class="text-sm">This file is ${(file.size / 1000000).toFixed(2)} MB in size. Displaying it may be slow.</p>
-                            </div>
-                        `;
-                    } else {
-                        contentViewer.innerHTML = '';
-                    }
-                    
-                    // For README files, fetch and render markdown
-                    if (file.name.toLowerCase().match(/^readme\.(md|markdown)$/)) {
-                        content = await fetchFileContent(file.download_url, contentCacheKey);
-                        contentViewer.innerHTML += `<div class="markdown-body">${marked.parse(content)}</div>`;
-                        hideLoadingContent();
-                        return;
-                    }
-                    
-                    const extension = file.name.split('.').pop().toLowerCase();
-                    
-                    // Handle different file types
-                    if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'].includes(extension)) {
-                        // Image files
-                        contentViewer.innerHTML += `
-                            <div class="flex flex-col items-center justify-center">
-                                <img src="${file.download_url}" alt="${file.name}" class="max-w-full max-h-[80vh] object-contain" />
-                                <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">To save this image, right-click on it and select "Save image as..."</p>
-                            </div>
-                        `;
-                    } else if (['mp3', 'ogg', 'wav'].includes(extension)) {
-                        // Audio files
-                        contentViewer.innerHTML += `
-                            <div class="flex flex-col items-center justify-center">
-                                <audio controls class="w-full max-w-lg">
-                                    <source src="${file.download_url}" type="audio/${extension}">
-                                    Your browser does not support the audio element.
-                                </audio>
-                                <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)</p>
-                            </div>
-                        `;
-                    } else if (['mp4', 'webm', 'ogv'].includes(extension)) {
-                        // Video files
-                        contentViewer.innerHTML += `
-                            <div class="flex flex-col items-center justify-center">
-                                <video controls class="max-w-full max-h-[80vh]">
-                                    <source src="${file.download_url}" type="video/${extension}">
-                                    Your browser does not support the video element.
-                                </video>
-                                <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">File: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</p>
-                            </div>
-                        `;
-                    } else if (['pdf'].includes(extension)) {
-                        // PDF files - Note: iframe might be blocked by CSP
-                        contentViewer.innerHTML += `
-                            <div class="flex flex-col items-center justify-center">
-                                <p class="mb-4 font-medium">PDF files cannot be displayed directly due to security restrictions.</p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">You can access the PDF at: <a href="${file.html_url}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">GitHub</a></p>
-                            </div>
-                        `;
-                    } else {
-                        // Text files
-                        content = await fetchFileContent(file.download_url, contentCacheKey);
-                        
-                        // Determine language for syntax highlighting
-                        let language = '';
-                        switch (extension) {
-                            case 'js': language = 'javascript'; break;
-                            case 'ts': language = 'typescript'; break;
-                            case 'py': language = 'python'; break;
-                            case 'java': language = 'java'; break;
-                            case 'html': language = 'html'; break;
-                            case 'css': language = 'css'; break;
-                            case 'json': language = 'json'; break;
-                            case 'md': language = 'markdown'; break;
-                            case 'go': language = 'go'; break;
-                            case 'rs': language = 'rust'; break;
-                            case 'c': case 'h': language = 'c'; break;
-                            case 'cpp': case 'hpp': language = 'cpp'; break;
-                            case 'sh': language = 'bash'; break;
-                            case 'rb': language = 'ruby'; break;
-                            case 'php': language = 'php'; break;
-                            case 'xml': language = 'xml'; break;
-                            case 'sql': language = 'sql'; break;
-                            case 'yml': case 'yaml': language = 'yaml'; break;
-                            default: language = 'plaintext';
-                        }
-                        
-                        // Split content into lines for line numbers
-                        const lines = content.split('\n');
-                        const lineNumbers = Array.from({ length: lines.length }, (_, i) => i + 1).join('\n');
-                        
-                        // Create container for the code with line numbers
-                        const codeContainer = document.createElement('div');
-                        codeContainer.className = 'code-with-lines';
-                        
-                        // Line numbers column
-                        const lineNumbersEl = document.createElement('pre');
-                        lineNumbersEl.className = 'line-numbers text-xs select-none';
-                        lineNumbersEl.textContent = lineNumbers;
-                        
-                        // Code content
-                        const lineContentEl = document.createElement('pre');
-                        lineContentEl.className = 'line-content';
-                        const codeElement = document.createElement('code');
-                        codeElement.className = `language-${language}`;
-                        codeElement.textContent = content;
-                        lineContentEl.appendChild(codeElement);
-                        
-                        // Add copy button
-                        const copyButton = document.createElement('button');
-                        copyButton.className = 'code-copy-btn';
-                        copyButton.setAttribute('data-clipboard-text', content);
-                        copyButton.innerHTML = '<i class="far fa-copy mr-1"></i> Copy';
-                        lineContentEl.appendChild(copyButton);
-                        
-                        // Assemble the code container
-                        codeContainer.appendChild(lineNumbersEl);
-                        codeContainer.appendChild(lineContentEl);
-                        contentViewer.appendChild(codeContainer);
-                        
-                        // Apply syntax highlighting
-                        hljs.highlightElement(codeElement);
-                    }
-                    
-                    // Show download button for individual files
-                    downloadBtn.classList.remove('hidden');
-                    downloadBtn.onclick = () => {
-                        window.open(file.download_url, '_blank');
-                    };
-                    
-                } catch (error) {
-                    console.error('Error viewing file:', error);
-                    contentViewer.innerHTML = `
-                        <div class="p-4 bg-red-50 dark:bg-red-900 border-l-4 border-red-500 text-red-800 dark:text-red-200">
-                            <p class="font-medium">Error loading file</p>
-                            <p class="text-sm">${error.message}</p>
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString();
+                } catch (e) {
+                    return dateStr;
+                }
+            };
+            
+            return {
+                id: arxivId,
+                title: title,
+                link: `https://arxiv.org/abs/${arxivId}`,
+                pdfLink: `https://arxiv.org/pdf/${arxivId}.pdf`,
+                summary: summary,
+                published: formatDate(published),
+                updated: formatDate(updated),
+                authors: authors,
+                categories: categories,
+                authorsStr: authors.join(', '),
+                categoriesStr: categories.join(', ')
+            };
+        }
+        
+        // Search function with pagination
+        searchButton.addEventListener('click', async () => {
+            const query = searchInput.value.trim();
+            if (!query) {
+                // Show error message instead of alert
+                searchMessage.textContent = 'Please enter search terms';
+                searchMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // Add to search history
+            addToSearchHistory(query);
+            
+            try {
+                // Show loading state
+                loading.classList.remove('hidden');
+                searchMessage.classList.add('hidden');
+                searchResultsElement.innerHTML = '';
+                resultsInfo.classList.add('hidden');
+                
+                // Get requested number of results
+                const requestedResults = parseInt(resultsCount.value);
+                
+                // ArXiv API has a maximum of 100 results per request
+                // We need to paginate to get more results
+                const BATCH_SIZE = 100;
+                const batchesToFetch = Math.ceil(Math.min(requestedResults, 1000) / BATCH_SIZE);
+                
+                searchResults = [];
+                const uniqueIds = new Set(); // Track unique IDs to prevent duplicates
+                
+                // Status message during pagination
+                const updateLoadingStatus = (current, total) => {
+                    loading.innerHTML = `
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-2"></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Fetching results (${current}/${total} batches)</div>
                         </div>
                     `;
-                } finally {
-                    hideLoadingContent();
-                }
-            }
-
-            // Fetch file content
-            async function fetchFileContent(url, cacheKey = null) {
-                // Check cache first
-                if (cacheKey) {
-                    const cachedContent = getCachedData(cacheKey);
-                    if (cachedContent) {
-                        return cachedContent;
-                    }
-                }
+                };
                 
-                try {
-                    const response = await fetchWithRetry(url, {}, 3);
-                    
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
-                    }
-                    
-                    const content = await response.text();
-                    
-                    // Cache the content
-                    if (cacheKey) {
-                        setCachedData(cacheKey, content);
-                    }
-                    
-                    return content;
-                    
-                } catch (error) {
-                    console.error('Error fetching file content:', error);
-                    throw error;
-                }
-            }
-
-            // Update action buttons based on current context
-            function updateActionButtons() {
-                // Single file view
-                if (currentFiles.length === 1 && currentFiles[0].type === 'file') {
-                    downloadBtn.classList.remove('hidden');
-                    compressBtn.classList.add('hidden');
-                    
-                    downloadBtn.onclick = () => {
-                        window.open(currentFiles[0].download_url, '_blank');
-                    };
-                } 
-                // Folder/repository view
-                else {
-                    downloadBtn.classList.add('hidden');
-                    compressBtn.classList.remove('hidden');
-                    
-                    compressBtn.onclick = () => {
-                        compressAndDownload();
-                    };
-                }
-            }
-
-            // Compress and download repository/folder
-            async function compressAndDownload() {
-                downloadModal.classList.remove('hidden');
-                downloadStatus.textContent = 'Preparing files...';
-                downloadProgress.style.width = '0%';
-                
-                // Create new abort controller for this download operation
-                abortController = new AbortController();
-                const signal = abortController.signal;
-                
-                try {
-                    // Determine folder name for the zip file
-                    let zipName;
-                    if (currentPath.length > 0) {
-                        zipName = currentPath[currentPath.length - 1] + '.zip';
-                    } else {
-                        zipName = `${currentRepo.name}-${currentBranch}.zip`;
-                    }
-                    
-                    // Create new JSZip instance
-                    const zip = new JSZip();
-                    const rootFolder = zip.folder(zipName.replace('.zip', ''));
-                    
-                    // Process all files and folders recursively
-                    await processFolder(rootFolder, currentPath.join('/'), 0, signal);
-                    
-                    // Generate and download zip file
-                    downloadStatus.textContent = 'Generating ZIP file...';
-                    
-                    zip.generateAsync({
-                        type: 'blob',
-                        compression: 'DEFLATE',
-                        compressionOptions: { level: 9 }
-                    }, (metadata) => {
-                        const percent = Math.min(100, Math.round(metadata.percent));
-                        downloadProgress.style.width = `${percent}%`;
-                    }).then(blob => {
-                        // Create download link
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        link.download = zipName;
+                // Process each batch of entries
+                const processEntries = (entries) => {
+                    Array.from(entries).forEach(entry => {
+                        const paperDetails = extractPaperDetails(entry);
                         
-                        // Simulate click to trigger download
-                        downloadStatus.textContent = 'Download ready!';
-                        link.click();
+                        // Skip duplicates
+                        if (uniqueIds.has(paperDetails.id)) return;
+                        uniqueIds.add(paperDetails.id);
                         
-                        // Clean up
-                        setTimeout(() => {
-                            URL.revokeObjectURL(link.href);
-                            downloadModal.classList.add('hidden');
-                        }, 1000);
+                        searchResults.push(paperDetails);
+                        
+                        // Stop if we've reached the requested number of results
+                        if (searchResults.length >= requestedResults) {
+                            return;
+                        }
                     });
+                };
+                
+                let hasResults = false;
+                
+                // Fetch results in batches
+                for (let i = 0; i < batchesToFetch; i++) {
+                    // Update status
+                    updateLoadingStatus(i + 1, batchesToFetch);
                     
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        console.log('Download was cancelled');
-                    } else {
-                        console.error('Error during compression:', error);
-                        downloadModal.classList.add('hidden');
-                        showError('Compression Error', 'Failed to compress and download files: ' + error.message);
-                    }
-                }
-            }
-
-            // Process folder recursively for compression
-            async function processFolder(zipFolder, path, depth, signal) {
-                if (depth > 10) {
-                    console.warn('Maximum folder depth reached (10), stopping to prevent infinite recursion');
-                    return;
-                }
-                
-                // Check if operation was aborted
-                if (signal.aborted) {
-                    throw new DOMException('Download aborted by user', 'AbortError');
-                }
-                
-                // Check cache for contents
-                const cacheKey = `contents_${currentRepo.owner}_${currentRepo.name}_${currentBranch}_${path}`;
-                let contents = getCachedData(cacheKey);
-                
-                if (!contents) {
-                    // Fetch folder contents
-                    const url = `https://api.github.com/repos/${currentRepo.owner}/${currentRepo.name}/contents/${path}?ref=${currentBranch}`;
+                    // Create ArXiv API URL with pagination
+                    const start = i * BATCH_SIZE;
+                    const url = `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(query)}&start=${start}&max_results=${BATCH_SIZE}`;
                     
                     try {
-                        downloadStatus.textContent = `Scanning ${path || 'repository root'}...`;
-                        
-                        const response = await fetchWithRetry(url, {}, 3);
+                        // Fetch results
+                        const response = await fetch(url);
                         
                         if (!response.ok) {
-                            throw new Error(`Failed to fetch folder: ${response.status} ${response.statusText}`);
+                            throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
                         }
                         
-                        // Update rate limit information
-                        updateRateLimitInfo(response.headers);
+                        const data = await response.text();
                         
-                        contents = await response.json();
+                        // Parse XML
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(data, 'text/xml');
                         
-                        // Cache the contents
-                        setCachedData(cacheKey, contents);
+                        // Check for parser errors
+                        const parserError = xmlDoc.getElementsByTagName('parsererror');
+                        if (parserError.length > 0) {
+                            throw new Error('Failed to parse ArXiv API response');
+                        }
+                        
+                        const entries = xmlDoc.getElementsByTagName('entry');
+                        
+                        if (entries.length > 0) {
+                            hasResults = true;
+                            processEntries(entries);
+                        }
+                        
+                        // Stop if we've reached the requested number of results or if we got fewer results than batch size
+                        if (searchResults.length >= requestedResults || entries.length < BATCH_SIZE) {
+                            break;
+                        }
+                        
+                        // Small delay to avoid hammering the API
+                        await new Promise(resolve => setTimeout(resolve, 300));
                     } catch (error) {
-                        if (error.name === 'AbortError') {
-                            throw error; // Re-throw abort errors
-                        } else {
-                            console.error(`Error processing folder ${path}:`, error);
-                            throw new Error(`Failed to process folder ${path}: ${error.message}`);
-                        }
+                        console.error(`Error fetching batch ${i+1}:`, error);
+                        // Continue with next batch instead of breaking completely
                     }
                 }
                 
-                // Process each item in the folder
-                let processedFiles = 0;
-                const totalFiles = contents.length;
-                
-                for (const item of contents) {
-                    // Check if operation was aborted
-                    if (signal.aborted) {
-                        throw new DOMException('Download aborted by user', 'AbortError');
-                    }
-                    
-                    if (item.type === 'file') {
-                        // Update status
-                        processedFiles++;
-                        downloadStatus.textContent = `Processing file ${processedFiles}/${totalFiles}: ${item.name}`;
-                        downloadProgress.style.width = `${Math.round((processedFiles / totalFiles) * 100)}%`;
-                        
-                        // Check cache for file content
-                        const fileCacheKey = `file_${currentRepo.owner}_${currentRepo.name}_${currentBranch}_${item.path}`;
-                        let fileContent = getCachedData(fileCacheKey);
-                        
-                        if (!fileContent) {
-                            // Fetch file content
-                            const fileResponse = await fetch(item.download_url);
-                            fileContent = await fileResponse.blob();
-                            
-                            // Don't cache blobs in sessionStorage
-                        }
-                        
-                        // Add file to zip
-                        zipFolder.file(item.name, fileContent);
-                        
-                    } else if (item.type === 'dir') {
-                        // Create subfolder and process recursively
-                        const subFolder = zipFolder.folder(item.name);
-                        const subPath = path ? `${path}/${item.name}` : item.name;
-                        await processFolder(subFolder, subPath, depth + 1, signal);
-                    }
-                }
-            }
-
-            // Show error modal
-            function showError(title, message, details = '') {
-                errorMessage.textContent = message;
-                
-                if (details) {
-                    errorDetails.textContent = details;
-                    errorDetails.classList.remove('hidden');
+                if (!hasResults) {
+                    searchMessage.textContent = 'No results found. Try different search terms.';
+                    searchMessage.classList.remove('hidden');
+                    saveAllContainer.classList.add('hidden');
                 } else {
-                    errorDetails.classList.add('hidden');
+                    renderSearchResults();
+                    saveAllContainer.classList.remove('hidden');
+                    
+                    // Show total results count
+                    resultsCountDisplay.textContent = `Found ${searchResults.length} results`;
+                    resultsInfo.classList.remove('hidden');
                 }
+            } catch (error) {
+                console.error('Search error:', error);
+                searchMessage.textContent = `Error: ${error.message || 'Failed to fetch papers. Please try again.'}`;
+                searchMessage.classList.remove('hidden');
+                saveAllContainer.classList.add('hidden');
+            } finally {
+                // Reset loading spinner to original state
+                loading.innerHTML = '<div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>';
+                loading.classList.add('hidden');
+            }
+        });
+        
+        // Render search results
+        function renderSearchResults() {
+            searchResultsElement.innerHTML = '';
+            
+            searchResults.forEach(paper => {
+                const isSaved = savedPapers.some(p => p.id === paper.id);
                 
-                errorModal.classList.remove('hidden');
-            }
-
-            // Hide error modal
-            function hideErrorModal() {
-                errorModal.classList.add('hidden');
-            }
-
-            // Show retry modal
-            function showRetryModal(message, callback) {
-                retryMessage.textContent = message || 'The request failed. Would you like to retry?';
-                retryCallback = callback;
-                retryModal.classList.remove('hidden');
-            }
-
-            // Hide retry modal
-            function hideRetryModal() {
-                retryModal.classList.add('hidden');
-                retryCallback = null;
-            }
-
-            // Show loading spinner for files
-            function showLoadingFiles() {
-                loadingFiles.classList.remove('hidden');
-                fileList.classList.add('hidden');
-                noResults.classList.add('hidden');
-            }
-
-            // Hide loading spinner for files
-            function hideLoadingFiles() {
-                loadingFiles.classList.add('hidden');
-                fileList.classList.remove('hidden');
-            }
-
-            // Show loading overlay for content
-            function showLoadingContent() {
-                loadingContent.classList.remove('hidden');
-            }
-
-            // Hide loading overlay for content
-            function hideLoadingContent() {
-                loadingContent.classList.add('hidden');
-            }
-
-            // Hide content viewer (when browsing folders)
-            function hideContentViewer() {
-                contentViewer.innerHTML = `
-                    <div class="flex items-center justify-center h-full text-gray-400">
-                        <div class="text-center">
-                            <i class="fas fa-folder-open text-4xl mb-3"></i>
-                            <p>Select a file to view its contents</p>
+                const paperElement = document.createElement('div');
+                paperElement.className = 'bg-white dark:bg-gray-800 p-2 rounded shadow-sm text-sm';
+                
+                // Create collapsible section for paper details
+                const detailsId = `details-${paper.id}`;
+                
+                paperElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="truncate flex-grow">
+                            <span class="font-medium dark:text-white">${paper.title}</span>
+                        </div>
+                        <div class="flex items-center ml-2 flex-shrink-0 space-x-1">
+                            <button class="details-toggle text-primary" data-target="${detailsId}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <a href="${paper.link}" target="_blank" class="text-primary hover:underline ml-1" title="View on arXiv">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <a href="${paper.pdfLink}" target="_blank" class="text-primary hover:underline ml-1" title="PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            <button class="save-button ml-1 ${isSaved ? 'text-yellow-500' : 'text-gray-400 dark:text-gray-500'}" data-id="${paper.id}" title="${isSaved ? 'Remove from library' : 'Save to library'}">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="${detailsId}" class="mt-2 hidden">
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <span class="font-semibold">Authors:</span> ${paper.authorsStr || 'N/A'}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <span class="font-semibold">Published:</span> ${paper.published || 'N/A'} 
+                            ${paper.updated && paper.updated !== paper.published ? `<span class="font-semibold ml-2">Updated:</span> ${paper.updated}` : ''}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <span class="font-semibold">Categories:</span> ${paper.categoriesStr || 'N/A'}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-2 border-t pt-1 dark:border-gray-700">
+                            <div class="font-semibold mb-1">Abstract:</div>
+                            <p class="whitespace-pre-line">${paper.summary || 'No abstract available'}</p>
                         </div>
                     </div>
                 `;
-            }
-
-            // Setup sessionStorage for caching
-            function initializeCache() {
-                try {
-                    if (typeof sessionStorage !== 'undefined') {
-                        // Test if sessionStorage is available
-                        sessionStorage.setItem('test', 'test');
-                        sessionStorage.removeItem('test');
-                        console.log('Cache enabled using sessionStorage');
+                
+                searchResultsElement.appendChild(paperElement);
+                
+                // Add save button functionality
+                const saveButton = paperElement.querySelector('.save-button');
+                saveButton.addEventListener('click', () => {
+                    toggleSavePaper(paper, saveButton);
+                });
+                
+                // Add details toggle functionality
+                const detailsToggle = paperElement.querySelector('.details-toggle');
+                const detailsSection = paperElement.querySelector(`#${detailsId}`);
+                
+                detailsToggle.addEventListener('click', () => {
+                    const isHidden = detailsSection.classList.contains('hidden');
+                    
+                    // Toggle icon and visibility
+                    if (isHidden) {
+                        detailsSection.classList.remove('hidden');
+                        detailsToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
                     } else {
-                        console.warn('sessionStorage not available, caching disabled');
+                        detailsSection.classList.add('hidden');
+                        detailsToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
                     }
-                } catch (e) {
-                    console.warn('sessionStorage not accessible, caching disabled:', e);
-                }
+                });
+            });
+        }
+        
+        // Toggle save/unsave paper
+        function toggleSavePaper(paper, button) {
+            const index = savedPapers.findIndex(p => p.id === paper.id);
+            
+            if (index === -1) {
+                // Add to saved
+                savedPapers.push(paper);
+                button.classList.remove('text-gray-400', 'dark:text-gray-500');
+                button.classList.add('text-yellow-500');
+                button.title = 'Remove from library';
+            } else {
+                // Remove from saved
+                savedPapers.splice(index, 1);
+                button.classList.add('text-gray-400', 'dark:text-gray-500');
+                button.classList.remove('text-yellow-500');
+                button.title = 'Save to library';
             }
-
-            // Initialize cache on load
-            initializeCache();
+            
+            // Update saved count
+            savePapersToStorage();
+        }
+        
+        // Save all results
+        saveAllBtn.addEventListener('click', () => {
+            let added = 0;
+            
+            searchResults.forEach(paper => {
+                if (!savedPapers.some(p => p.id === paper.id)) {
+                    savedPapers.push(paper);
+                    added++;
+                    
+                    // Update save button appearance
+                    const saveButton = document.querySelector(`.save-button[data-id="${paper.id}"]`);
+                    if (saveButton) {
+                        saveButton.classList.remove('text-gray-400', 'dark:text-gray-500');
+                        saveButton.classList.add('text-yellow-500');
+                    }
+                }
+            });
+            
+            // Update saved count
+            savePapersToStorage();
+            
+            if (added > 0) {
+                // Show message without alert
+                const messageElement = document.createElement('div');
+                messageElement.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+                messageElement.textContent = `Added ${added} papers to your library`;
+                document.body.appendChild(messageElement);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    document.body.removeChild(messageElement);
+                }, 3000);
+            }
         });
+        
+        // Render library
+        function renderLibrary() {
+            if (savedPapers.length === 0) {
+                libraryEmpty.classList.remove('hidden');
+                libraryItems.classList.add('hidden');
+                exportBtn.disabled = true;
+                return;
+            }
+            
+            libraryEmpty.classList.add('hidden');
+            libraryItems.classList.remove('hidden');
+            exportBtn.disabled = false;
+            
+            libraryItems.innerHTML = '';
+            
+            savedPapers.forEach(paper => {
+                const paperElement = document.createElement('div');
+                paperElement.className = 'bg-white dark:bg-gray-800 p-2 rounded shadow-sm text-sm';
+                
+                // Create collapsible section for paper details
+                const detailsId = `library-details-${paper.id}`;
+                
+                paperElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="truncate flex-grow">
+                            <span class="font-medium dark:text-white">${paper.title}</span>
+                        </div>
+                        <div class="flex items-center ml-2 flex-shrink-0 space-x-1">
+                            <button class="details-toggle text-primary" data-target="${detailsId}">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <a href="${paper.link}" target="_blank" class="text-primary hover:underline ml-1" title="View on arXiv">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <a href="${paper.pdfLink}" target="_blank" class="text-primary hover:underline ml-1" title="PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            <button class="remove-button ml-1 text-red-500" data-id="${paper.id}" title="Remove from library">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="${detailsId}" class="mt-2 hidden">
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <span class="font-semibold">Authors:</span> ${paper.authorsStr || 'N/A'}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <span class="font-semibold">Published:</span> ${paper.published || 'N/A'} 
+                            ${paper.updated && paper.updated !== paper.published ? `<span class="font-semibold ml-2">Updated:</span> ${paper.updated}` : ''}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <span class="font-semibold">Categories:</span> ${paper.categoriesStr || 'N/A'}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-2 border-t pt-1 dark:border-gray-700">
+                            <div class="font-semibold mb-1">Abstract:</div>
+                            <p class="whitespace-pre-line">${paper.summary || 'No abstract available'}</p>
+                        </div>
+                    </div>
+                `;
+                
+                libraryItems.appendChild(paperElement);
+                
+                // Add remove button functionality
+                const removeButton = paperElement.querySelector('.remove-button');
+                removeButton.addEventListener('click', () => {
+                    const index = savedPapers.findIndex(p => p.id === paper.id);
+                    if (index !== -1) {
+                        savedPapers.splice(index, 1);
+                        savePapersToStorage();
+                        renderLibrary();
+                        
+                        // Update button in search results if visible
+                        const saveButton = document.querySelector(`.save-button[data-id="${paper.id}"]`);
+                        if (saveButton) {
+                            saveButton.classList.add('text-gray-400', 'dark:text-gray-500');
+                            saveButton.classList.remove('text-yellow-500');
+                        }
+                    }
+                });
+                
+                // Add details toggle functionality
+                const detailsToggle = paperElement.querySelector('.details-toggle');
+                const detailsSection = paperElement.querySelector(`#${detailsId}`);
+                
+                detailsToggle.addEventListener('click', () => {
+                    const isHidden = detailsSection.classList.contains('hidden');
+                    
+                    // Toggle icon and visibility
+                    if (isHidden) {
+                        detailsSection.classList.remove('hidden');
+                        detailsToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
+                    } else {
+                        detailsSection.classList.add('hidden');
+                        detailsToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    }
+                });
+            });
+        }
+        
+        // Generate BibTeX citation
+        function generateBibTeX(paper) {
+            const cleanAuthors = paper.authors.map(author => {
+                // Replace special characters and return last name first
+                const parts = author.split(' ');
+                if (parts.length > 1) {
+                    const lastName = parts.pop();
+                    return `${lastName}, ${parts.join(' ')}`;
+                }
+                return author;
+            }).join(' and ');
+            
+            // Generate a citation key: first author's last name + year + first word of title
+            let citationKey = '';
+            if (paper.authors.length > 0) {
+                const firstAuthor = paper.authors[0].split(' ').pop();
+                const year = paper.published ? paper.published.split('/').pop() : '';
+                const firstWord = paper.title.split(' ')[0].replace(/[^\w]/g, '');
+                citationKey = `${firstAuthor}${year}${firstWord}`;
+            } else {
+                citationKey = `arxiv${paper.id.replace('.', '')}`;
+            }
+            
+            // Escape special characters in title
+            const escapedTitle = paper.title
+                .replace(/{/g, '\\{')
+                .replace(/}/g, '\\}')
+                .replace(/_/g, '\\_')
+                .replace(/&/g, '\\&')
+                .replace(/#/g, '\\#')
+                .replace(/\$/g, '\\$')
+                .replace(/%/g, '\\%')
+                .replace(/\^/g, '\\^')
+                .replace(/~/g, '\\~');
+            
+            return `@article{${citationKey},
+  title={${escapedTitle}},
+  author={${cleanAuthors}},
+  journal={arXiv preprint arXiv:${paper.id}},
+  url={${paper.link}},
+  pdf={${paper.pdfLink}},
+  year={${paper.published ? paper.published.split('/').pop() : 'n/a'}}
+}`;
+        }
+        
+        // Export functionality
+        exportBtn.addEventListener('click', () => {
+            if (savedPapers.length === 0) return;
+            
+            let content = '';
+            const format = exportFormat.value;
+            
+            if (format === 'csv') {
+                // Create CSV format with more details
+                content = 'Title,Authors,Published,Updated,Categories,ArXiv ID,URL,PDF URL\n';
+                
+                savedPapers.forEach(paper => {
+                    // Properly escape fields for CSV
+                    const escapeCsv = (str) => `"${(str || '').replace(/"/g, '""')}"`;
+                    
+                    content += [
+                        escapeCsv(paper.title),
+                        escapeCsv(paper.authorsStr),
+                        escapeCsv(paper.published),
+                        escapeCsv(paper.updated),
+                        escapeCsv(paper.categoriesStr),
+                        escapeCsv(paper.id),
+                        paper.link,
+                        paper.pdfLink
+                    ].join(',') + '\n';
+                });
+            } else if (format === 'bibtex') {
+                // Create BibTeX format
+                content = savedPapers.map(generateBibTeX).join('\n\n');
+            }
+            
+            // Create modal for displaying export
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded max-w-2xl w-full p-4 max-h-[80vh] overflow-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold dark:text-white">Exported Papers (${format.toUpperCase()})</h2>
+                        <button id="close-modal" class="text-gray-600 dark:text-gray-400">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-sm dark:text-gray-300">
+                            ${format === 'csv' ? 'CSV format for spreadsheet import' : 'BibTeX format for LaTeX documents'}
+                        </p>
+                        <button id="copy-button" class="bg-primary text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-copy mr-1"></i> Copy to Clipboard
+                        </button>
+                    </div>
+                    <pre class="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm overflow-auto whitespace-pre-wrap dark:text-gray-300">${content}</pre>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close modal functionality
+            const closeButton = modal.querySelector('#close-modal');
+            closeButton.addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            // Click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+            
+            // Copy to clipboard functionality
+            const copyButton = modal.querySelector('#copy-button');
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(content)
+                    .then(() => {
+                        copyButton.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+                        setTimeout(() => {
+                            copyButton.innerHTML = '<i class="fas fa-copy mr-1"></i> Copy to Clipboard';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        copyButton.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Failed to copy';
+                        setTimeout(() => {
+                            copyButton.innerHTML = '<i class="fas fa-copy mr-1"></i> Copy to Clipboard';
+                        }, 2000);
+                    });
+            });
+        });
+        
+        // Load saved papers on page load
+        loadSavedPapers();
+        
+        // Load search history on page load
+        loadSearchHistory();
     </script>
 </body>
 </html>
