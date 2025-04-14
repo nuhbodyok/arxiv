@@ -23,13 +23,18 @@
     <div class="container mx-auto max-w-4xl">
         <div class="flex justify-between items-center mb-3">
             <h1 class="text-xl font-bold text-center text-gray-800 dark:text-white">ArXiv Paper Search</h1>
-            <button id="theme-toggle" class="p-2 text-gray-500 dark:text-gray-300">
-                <i class="fas fa-moon dark:hidden"></i>
-                <i class="fas fa-sun hidden dark:block"></i>
-            </button>
+            <div class="flex items-center">
+                <button id="help-button" class="p-2 text-gray-500 dark:text-gray-300 mr-2">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+                <button id="theme-toggle" class="p-2 text-gray-500 dark:text-gray-300">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+            </div>
         </div>
         
-        <!-- Simple Search Form -->
+        <!-- Search Form -->
         <div class="bg-white dark:bg-gray-800 p-3 rounded shadow-sm mb-3">
             <div class="flex flex-col md:flex-row gap-2">
                 <div class="flex-grow">
@@ -53,6 +58,72 @@
                 </div>
             </div>
             
+            <!-- Advanced Search Toggle -->
+            <div class="mt-2">
+                <button id="advanced-search-toggle" class="text-xs text-primary flex items-center">
+                    <i class="fas fa-cog mr-1"></i> Advanced Search Options
+                    <i class="fas fa-chevron-down ml-1"></i>
+                </button>
+                
+                <div id="advanced-search-options" class="hidden mt-2 space-y-2">
+                    <!-- Categories Selection -->
+                    <div>
+                        <label class="text-xs text-gray-600 dark:text-gray-400 block mb-1">Categories:</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-1 text-xs">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-checkbox mr-1" value="cs"> Computer Science
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-checkbox mr-1" value="math"> Mathematics
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-checkbox mr-1" value="physics"> Physics
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-checkbox mr-1" value="q-bio"> Quantitative Biology
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-checkbox mr-1" value="q-fin"> Quantitative Finance
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-checkbox mr-1" value="stat"> Statistics
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Date Range Selection -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-gray-600 dark:text-gray-400 block mb-1">From Date:</label>
+                            <input type="date" id="from-date" class="w-full p-1.5 border rounded text-xs dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-600 dark:text-gray-400 block mb-1">To Date:</label>
+                            <input type="date" id="to-date" class="w-full p-1.5 border rounded text-xs dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        </div>
+                    </div>
+                    
+                    <!-- Search Field Selection -->
+                    <div>
+                        <label class="text-xs text-gray-600 dark:text-gray-400 block mb-1">Search In:</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-1 text-xs">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="search-field-checkbox mr-1" value="all" checked> All Fields
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="search-field-checkbox mr-1" value="title"> Title
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="search-field-checkbox mr-1" value="author"> Author
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="search-field-checkbox mr-1" value="abstract"> Abstract
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Search History Dropdown -->
             <div id="search-history-container" class="mt-2 hidden">
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 flex justify-between items-center">
@@ -71,6 +142,28 @@
         
         <!-- Results Section -->
         <div id="results-section">
+            <!-- Search Results Controls -->
+            <div id="results-controls" class="hidden mb-3">
+                <div class="flex flex-col md:flex-row justify-between gap-2">
+                    <div class="flex-grow">
+                        <input type="text" id="filter-results" placeholder="Filter results..." 
+                            class="w-full p-1.5 border rounded text-base dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="sort-results" class="p-1.5 border rounded text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <option value="relevance">Sort by Relevance</option>
+                            <option value="date-desc">Date (Newest First)</option>
+                            <option value="date-asc">Date (Oldest First)</option>
+                            <option value="title-asc">Title (A-Z)</option>
+                            <option value="title-desc">Title (Z-A)</option>
+                        </select>
+                        <button id="save-all-btn" class="bg-primary text-white px-3 py-1 rounded text-sm whitespace-nowrap">
+                            <i class="fas fa-star mr-1"></i> Save All
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <div id="loading" class="hidden flex justify-center p-10">
                 <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
@@ -80,28 +173,58 @@
             <div id="results-info" class="text-sm text-gray-600 dark:text-gray-400 mb-2 hidden">
                 <span id="results-count-display"></span>
             </div>
-            <div id="save-all-container" class="hidden mb-3 flex justify-end">
-                <button id="save-all-btn" class="bg-primary text-white px-3 py-1 rounded text-sm">
-                    <i class="fas fa-star mr-1"></i> Save All Results
+            
+            <div id="search-results" class="space-y-1.5"></div>
+            <div id="load-more-container" class="hidden mt-4 text-center">
+                <button id="load-more-btn" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded text-sm dark:text-white">
+                    Load More Results
                 </button>
             </div>
-            <div id="search-results" class="space-y-1.5"></div>
+            <div id="virtual-scroll-observer" class="h-1"></div>
         </div>
         
         <!-- Library Section -->
         <div id="library-section" class="hidden">
-            <div class="flex justify-between mb-2">
-                <h2 class="text-lg font-bold dark:text-white">Saved Papers</h2>
+            <div class="flex flex-col md:flex-row justify-between mb-3 gap-2">
+                <div class="flex-grow">
+                    <input type="text" id="library-search" placeholder="Search in your library..." 
+                        class="w-full p-1.5 border rounded text-base dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                </div>
                 <div class="flex gap-2">
-                    <select id="export-format" class="text-sm p-1 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                        <option value="csv">CSV Format</option>
-                        <option value="bibtex">BibTeX Format</option>
+                    <select id="sort-library" class="p-1.5 border rounded text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <option value="date-desc">Date (Newest First)</option>
+                        <option value="date-asc">Date (Oldest First)</option>
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
                     </select>
-                    <button id="export-btn" class="bg-primary text-white px-3 py-1 text-sm rounded" disabled>
-                        <i class="fas fa-file-export mr-1"></i> Export
-                    </button>
+                    <div class="relative inline-block">
+                        <button id="export-btn" class="bg-primary text-white px-3 py-1.5 text-sm rounded flex items-center whitespace-nowrap" disabled>
+                            <i class="fas fa-file-export mr-1"></i> Export
+                        </button>
+                        <div id="export-dropdown" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-gray-800 rounded shadow-lg z-10">
+                            <div class="p-2 border-b dark:border-gray-700">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Export as:</p>
+                            </div>
+                            <button id="export-csv" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white">
+                                <i class="fas fa-file-csv mr-1"></i> CSV Format
+                            </button>
+                            <button id="export-bibtex" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white">
+                                <i class="fas fa-file-code mr-1"></i> BibTeX Format
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
+            <!-- Category Filters for Library -->
+            <div class="mb-4">
+                <div class="flex justify-between items-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Filter by category:</p>
+                    <button id="clear-category-filters" class="text-xs text-primary">Clear All</button>
+                </div>
+                <div id="category-filters" class="flex flex-wrap gap-1 text-xs"></div>
+            </div>
+            
             <div id="library-empty" class="text-center p-4 text-gray-500 dark:text-gray-400 text-sm">
                 Your library is empty
             </div>
@@ -109,12 +232,72 @@
         </div>
     </div>
 
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded max-w-2xl w-full p-4 max-h-[80vh] overflow-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold dark:text-white">ArXiv Paper Search Help</h2>
+                <button id="close-help-modal" class="text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="text-sm dark:text-gray-300 space-y-4">
+                <div>
+                    <h3 class="font-bold text-base mb-1">Basic Search</h3>
+                    <p>Enter keywords in the search box and press the Search button or hit Enter. Select the number of results to display from the dropdown.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">Advanced Search</h3>
+                    <p>Click "Advanced Search Options" to:</p>
+                    <ul class="list-disc pl-5 mt-1">
+                        <li>Filter by specific categories like Computer Science, Mathematics, etc.</li>
+                        <li>Limit results by date range</li>
+                        <li>Specify which fields to search (title, author, abstract)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">Working with Results</h3>
+                    <ul class="list-disc pl-5">
+                        <li>Click the star icon to save a paper to your library</li>
+                        <li>Click on the arrow to expand paper details</li>
+                        <li>Use external links to view on arXiv or download PDF</li>
+                        <li>Filter and sort results with the controls above the list</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">Library Features</h3>
+                    <ul class="list-disc pl-5">
+                        <li>Search within your saved papers</li>
+                        <li>Sort by different criteria</li>
+                        <li>Filter by category</li>
+                        <li>Export your library in CSV or BibTeX format</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">Keyboard Shortcuts</h3>
+                    <ul class="list-disc pl-5">
+                        <li><kbd class="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd> - Execute search when in search box</li>
+                        <li><kbd class="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Ctrl</kbd> + <kbd class="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">F</kbd> - Focus search/filter box</li>
+                        <li><kbd class="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> - Close modals</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // State management
         let savedPapers = [];
         let searchResults = [];
+        let displayedResults = [];
+        let filteredResults = [];
         let searchHistory = [];
+        let categories = new Set();
+        let selectedCategories = new Set();
         const MAX_HISTORY_ITEMS = 5;
+        const RESULTS_PER_PAGE = 20;
+        let currentResultsPage = 1;
+        let isLoading = false;
         
         // DOM Elements
         const searchInput = document.getElementById('search-input');
@@ -131,15 +314,78 @@
         const libraryEmpty = document.getElementById('library-empty');
         const libraryItems = document.getElementById('library-items');
         const saveAllBtn = document.getElementById('save-all-btn');
-        const saveAllContainer = document.getElementById('save-all-container');
-        const exportBtn = document.getElementById('export-btn');
-        const exportFormat = document.getElementById('export-format');
+        const resultsControls = document.getElementById('results-controls');
         const resultsInfo = document.getElementById('results-info');
         const resultsCountDisplay = document.getElementById('results-count-display');
         const themeToggle = document.getElementById('theme-toggle');
         const searchHistoryContainer = document.getElementById('search-history-container');
         const searchHistoryElement = document.getElementById('search-history');
         const clearHistoryBtn = document.getElementById('clear-history');
+        const advancedSearchToggle = document.getElementById('advanced-search-toggle');
+        const advancedSearchOptions = document.getElementById('advanced-search-options');
+        const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+        const searchFieldCheckboxes = document.querySelectorAll('.search-field-checkbox');
+        const fromDateInput = document.getElementById('from-date');
+        const toDateInput = document.getElementById('to-date');
+        const filterResultsInput = document.getElementById('filter-results');
+        const sortResultsSelect = document.getElementById('sort-results');
+        const librarySearchInput = document.getElementById('library-search');
+        const sortLibrarySelect = document.getElementById('sort-library');
+        const exportBtn = document.getElementById('export-btn');
+        const exportDropdown = document.getElementById('export-dropdown');
+        const exportCsvBtn = document.getElementById('export-csv');
+        const exportBibtexBtn = document.getElementById('export-bibtex');
+        const categoryFilters = document.getElementById('category-filters');
+        const clearCategoryFiltersBtn = document.getElementById('clear-category-filters');
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const loadMoreContainer = document.getElementById('load-more-container');
+        const virtualScrollObserver = document.getElementById('virtual-scroll-observer');
+        const helpButton = document.getElementById('help-button');
+        const helpModal = document.getElementById('help-modal');
+        const closeHelpModalBtn = document.getElementById('close-help-modal');
+        
+        // Help Modal
+        helpButton.addEventListener('click', () => {
+            helpModal.classList.remove('hidden');
+        });
+        
+        closeHelpModalBtn.addEventListener('click', () => {
+            helpModal.classList.add('hidden');
+        });
+        
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.add('hidden');
+            }
+        });
+
+        // Escape key to close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                helpModal.classList.add('hidden');
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (modal && !modal.classList.contains('hidden')) {
+                        modal.classList.add('hidden');
+                    }
+                });
+                exportDropdown.classList.add('hidden');
+            }
+            
+            // Ctrl+F to focus search box
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                if (!librarySection.classList.contains('hidden')) {
+                    librarySearchInput.focus();
+                } else {
+                    if (searchResults.length > 0) {
+                        filterResultsInput.focus();
+                    } else {
+                        searchInput.focus();
+                    }
+                }
+            }
+        });
         
         // Dark mode detection and toggle
         function initTheme() {
@@ -158,6 +404,19 @@
         // Initialize theme on load
         initTheme();
         
+        // Advanced search toggle
+        advancedSearchToggle.addEventListener('click', () => {
+            const isHidden = advancedSearchOptions.classList.contains('hidden');
+            
+            if (isHidden) {
+                advancedSearchOptions.classList.remove('hidden');
+                advancedSearchToggle.innerHTML = '<i class="fas fa-cog mr-1"></i> Advanced Search Options <i class="fas fa-chevron-up ml-1"></i>';
+            } else {
+                advancedSearchOptions.classList.add('hidden');
+                advancedSearchToggle.innerHTML = '<i class="fas fa-cog mr-1"></i> Advanced Search Options <i class="fas fa-chevron-down ml-1"></i>';
+            }
+        });
+        
         // Load saved papers from localStorage
         function loadSavedPapers() {
             const saved = localStorage.getItem('arxiv-saved-papers');
@@ -166,6 +425,15 @@
                     savedPapers = JSON.parse(saved);
                     savedCount.textContent = savedPapers.length;
                     exportBtn.disabled = savedPapers.length === 0;
+                    
+                    // Extract all categories from saved papers
+                    savedPapers.forEach(paper => {
+                        if (paper.categories && paper.categories.length) {
+                            paper.categories.forEach(cat => categories.add(cat));
+                        }
+                    });
+                    
+                    updateCategoryFilters();
                 } catch (e) {
                     console.error('Error loading saved papers:', e);
                     savedPapers = [];
@@ -178,6 +446,102 @@
             localStorage.setItem('arxiv-saved-papers', JSON.stringify(savedPapers));
             savedCount.textContent = savedPapers.length;
             exportBtn.disabled = savedPapers.length === 0;
+            
+            // Update categories
+            categories = new Set();
+            savedPapers.forEach(paper => {
+                if (paper.categories && paper.categories.length) {
+                    paper.categories.forEach(cat => categories.add(cat));
+                }
+            });
+            
+            updateCategoryFilters();
+        }
+        
+        // Update category filters UI
+        function updateCategoryFilters() {
+            categoryFilters.innerHTML = '';
+            
+            if (categories.size === 0) {
+                const noCategories = document.createElement('span');
+                noCategories.className = 'text-gray-500 dark:text-gray-400';
+                noCategories.textContent = 'No categories available';
+                categoryFilters.appendChild(noCategories);
+                return;
+            }
+            
+            // Sort categories alphabetically
+            const sortedCategories = Array.from(categories).sort();
+            
+            sortedCategories.forEach(category => {
+                const isSelected = selectedCategories.has(category);
+                
+                const filterBtn = document.createElement('button');
+                filterBtn.className = `px-2 py-1 rounded text-xs ${isSelected ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white'}`;
+                filterBtn.textContent = category;
+                filterBtn.dataset.category = category;
+                
+                filterBtn.addEventListener('click', () => {
+                    if (selectedCategories.has(category)) {
+                        selectedCategories.delete(category);
+                        filterBtn.classList.remove('bg-primary', 'text-white');
+                        filterBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                    } else {
+                        selectedCategories.add(category);
+                        filterBtn.classList.add('bg-primary', 'text-white');
+                        filterBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+                    }
+                    
+                    filterLibrary();
+                });
+                
+                categoryFilters.appendChild(filterBtn);
+            });
+        }
+        
+        // Clear category filters
+        clearCategoryFiltersBtn.addEventListener('click', () => {
+            selectedCategories.clear();
+            
+            const filterButtons = categoryFilters.querySelectorAll('button');
+            filterButtons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white');
+            });
+            
+            filterLibrary();
+        });
+        
+        // Filter library based on search and category filters
+        function filterLibrary() {
+            const searchQuery = librarySearchInput.value.toLowerCase().trim();
+            const hasSearchQuery = searchQuery.length > 0;
+            const hasCategoryFilters = selectedCategories.size > 0;
+            
+            let filteredPapers = [...savedPapers];
+            
+            // Apply search filter
+            if (hasSearchQuery) {
+                filteredPapers = filteredPapers.filter(paper => {
+                    return paper.title.toLowerCase().includes(searchQuery) ||
+                           paper.authorsStr.toLowerCase().includes(searchQuery) ||
+                           paper.summary.toLowerCase().includes(searchQuery) ||
+                           paper.categoriesStr.toLowerCase().includes(searchQuery);
+                });
+            }
+            
+            // Apply category filters
+            if (hasCategoryFilters) {
+                filteredPapers = filteredPapers.filter(paper => {
+                    return paper.categories.some(category => selectedCategories.has(category));
+                });
+            }
+            
+            // Sort papers
+            sortPapers(filteredPapers, sortLibrarySelect.value);
+            
+            // Update UI
+            renderLibrary(filteredPapers);
         }
         
         // Load search history from localStorage
@@ -257,6 +621,11 @@
             if (!searchHistoryContainer.contains(e.target) && e.target !== searchInput) {
                 searchHistoryContainer.classList.add('hidden');
             }
+            
+            // Hide export dropdown when clicking outside
+            if (!exportDropdown.contains(e.target) && e.target !== exportBtn) {
+                exportDropdown.classList.add('hidden');
+            }
         });
         
         // Tab switching
@@ -281,6 +650,73 @@
                 searchButton.click();
             }
         });
+        
+        // Create URL for ArXiv API with all filters
+        function createArxivApiUrl(query, start, maxResults) {
+            let url = `https://export.arxiv.org/api/query?start=${start}&max_results=${maxResults}`;
+            
+            // Add search query with field specifiers
+            const selectedFields = Array.from(searchFieldCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            
+            // If "all" is selected, just use the query without field specifiers
+            if (selectedFields.includes('all')) {
+                url += `&search_query=all:${encodeURIComponent(query)}`;
+            } else {
+                // Build advanced query with field specifiers
+                const queryParts = [];
+                
+                if (selectedFields.includes('title')) {
+                    queryParts.push(`ti:${encodeURIComponent(query)}`);
+                }
+                
+                if (selectedFields.includes('author')) {
+                    queryParts.push(`au:${encodeURIComponent(query)}`);
+                }
+                
+                if (selectedFields.includes('abstract')) {
+                    queryParts.push(`abs:${encodeURIComponent(query)}`);
+                }
+                
+                // If no fields were selected, default to "all"
+                if (queryParts.length === 0) {
+                    url += `&search_query=all:${encodeURIComponent(query)}`;
+                } else {
+                    url += `&search_query=${queryParts.join('+OR+')}`;
+                }
+            }
+            
+            // Add category filters
+            const selectedCategories = Array.from(categoryCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            
+            if (selectedCategories.length > 0) {
+                url += `+AND+cat:${selectedCategories.join('+OR+cat:')}`;
+            }
+            
+            // Add date range filters
+            let dateFilters = [];
+            
+            if (fromDateInput.value) {
+                const fromDate = new Date(fromDateInput.value);
+                dateFilters.push(`submittedDate:[${fromDate.toISOString().split('T')[0]}000000 TO *]`);
+            }
+            
+            if (toDateInput.value) {
+                const toDate = new Date(toDateInput.value);
+                // Add one day to include the end date
+                toDate.setDate(toDate.getDate() + 1);
+                dateFilters.push(`submittedDate:[* TO ${toDate.toISOString().split('T')[0]}000000]`);
+            }
+            
+            if (dateFilters.length > 0) {
+                url += `+AND+${dateFilters.join('+AND+')}`;
+            }
+            
+            return url;
+        }
         
         // Extract more detailed information from ArXiv entry
         function extractPaperDetails(entry) {
@@ -316,6 +752,9 @@
                 }
             };
             
+            // For sorting
+            const publishedDate = published ? new Date(published) : null;
+            
             return {
                 id: arxivId,
                 title: title,
@@ -324,6 +763,7 @@
                 summary: summary,
                 published: formatDate(published),
                 updated: formatDate(updated),
+                publishedDate: publishedDate,
                 authors: authors,
                 categories: categories,
                 authorsStr: authors.join(', '),
@@ -335,32 +775,65 @@
         searchButton.addEventListener('click', async () => {
             const query = searchInput.value.trim();
             if (!query) {
-                // Show error message instead of alert
+                // Show error message
                 searchMessage.textContent = 'Please enter search terms';
                 searchMessage.classList.remove('hidden');
                 return;
             }
             
+            // Reset pagination
+            currentResultsPage = 1;
+            
             // Add to search history
             addToSearchHistory(query);
             
+            // Reset search results
+            searchResults = [];
+            displayedResults = [];
+            filteredResults = [];
+            
             try {
-                // Show loading state
+                // Show loading state and hide previous content
                 loading.classList.remove('hidden');
                 searchMessage.classList.add('hidden');
                 searchResultsElement.innerHTML = '';
                 resultsInfo.classList.add('hidden');
+                resultsControls.classList.add('hidden');
+                loadMoreContainer.classList.add('hidden');
                 
+                // Get requested number of results and start fetching
+                await fetchSearchResults(query);
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                searchMessage.textContent = `Error: ${error.message || 'Failed to fetch papers. Please try again.'}`;
+                searchMessage.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        });
+        
+        // Fetch search results with pagination support
+        async function fetchSearchResults(query, append = false) {
+            if (isLoading) return;
+            
+            isLoading = true;
+            
+            try {
                 // Get requested number of results
                 const requestedResults = parseInt(resultsCount.value);
                 
                 // ArXiv API has a maximum of 100 results per request
                 // We need to paginate to get more results
                 const BATCH_SIZE = 100;
-                const batchesToFetch = Math.ceil(Math.min(requestedResults, 1000) / BATCH_SIZE);
+                let totalBatches = Math.ceil(Math.min(requestedResults, 1000) / BATCH_SIZE);
+                let batchesToFetch = append ? 1 : Math.min(3, totalBatches); // Fetch up to 3 batches initially
                 
-                searchResults = [];
+                // Set up start batch number
+                let startBatch = append ? Math.floor(searchResults.length / BATCH_SIZE) : 0;
+                
                 const uniqueIds = new Set(); // Track unique IDs to prevent duplicates
+                searchResults.forEach(result => uniqueIds.add(result.id));
                 
                 // Status message during pagination
                 const updateLoadingStatus = (current, total) => {
@@ -372,175 +845,345 @@
                     `;
                 };
                 
-                // Process each batch of entries
-                const processEntries = (entries) => {
-                    Array.from(entries).forEach(entry => {
-                        const paperDetails = extractPaperDetails(entry);
-                        
-                        // Skip duplicates
-                        if (uniqueIds.has(paperDetails.id)) return;
-                        uniqueIds.add(paperDetails.id);
-                        
-                        searchResults.push(paperDetails);
-                        
-                        // Stop if we've reached the requested number of results
-                        if (searchResults.length >= requestedResults) {
-                            return;
-                        }
-                    });
-                };
-                
                 let hasResults = false;
+                let hasMoreResults = false;
                 
                 // Fetch results in batches
                 for (let i = 0; i < batchesToFetch; i++) {
                     // Update status
                     updateLoadingStatus(i + 1, batchesToFetch);
                     
-                    // Create ArXiv API URL with pagination
-                    const start = i * BATCH_SIZE;
-                    const url = `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(query)}&start=${start}&max_results=${BATCH_SIZE}`;
+                    // Calculate start index for this batch
+                    const start = (startBatch + i) * BATCH_SIZE;
                     
-                    try {
-                        // Fetch results
-                        const response = await fetch(url);
-                        
-                        if (!response.ok) {
-                            throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                    // Create ArXiv API URL with pagination and filters
+                    const url = createArxivApiUrl(query, start, BATCH_SIZE);
+                    
+                    // Fetch with retry logic
+                    let retries = 0;
+                    const MAX_RETRIES = 3;
+                    let success = false;
+                    
+                    while (retries < MAX_RETRIES && !success) {
+                        try {
+                            // Fetch results
+                            const response = await fetch(url);
+                            
+                            if (!response.ok) {
+                                if (response.status === 429) {
+                                    // Rate limited, wait and retry
+                                    await new Promise(resolve => setTimeout(resolve, 2000));
+                                    retries++;
+                                    continue;
+                                }
+                                throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.text();
+                            
+                            // Parse XML
+                            const parser = new DOMParser();
+                            const xmlDoc = parser.parseFromString(data, 'text/xml');
+                            
+                            // Check for parser errors
+                            const parserError = xmlDoc.getElementsByTagName('parsererror');
+                            if (parserError.length > 0) {
+                                throw new Error('Failed to parse ArXiv API response');
+                            }
+                            
+                            const entries = xmlDoc.getElementsByTagName('entry');
+                            
+                            if (entries.length > 0) {
+                                hasResults = true;
+                                
+                                // Process entries
+                                Array.from(entries).forEach(entry => {
+                                    const paperDetails = extractPaperDetails(entry);
+                                    
+                                    // Skip duplicates
+                                    if (uniqueIds.has(paperDetails.id)) return;
+                                    uniqueIds.add(paperDetails.id);
+                                    
+                                    if (!append) {
+                                        searchResults.push(paperDetails);
+                                    } else {
+                                        searchResults.push(paperDetails);
+                                    }
+                                });
+                                
+                                // Check if there might be more results
+                                if (entries.length === BATCH_SIZE) {
+                                    hasMoreResults = true;
+                                }
+                            }
+                            
+                            success = true;
+                            
+                        } catch (error) {
+                            console.error(`Error fetching batch ${i+1} (retry ${retries+1}):`, error);
+                            retries++;
+                            
+                            if (retries >= MAX_RETRIES) {
+                                console.error(`Failed after ${MAX_RETRIES} retries`);
+                                // Continue with next batch instead of breaking completely
+                                success = true; // to exit the while loop
+                            } else {
+                                // Wait before retrying
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                            }
                         }
-                        
-                        const data = await response.text();
-                        
-                        // Parse XML
-                        const parser = new DOMParser();
-                        const xmlDoc = parser.parseFromString(data, 'text/xml');
-                        
-                        // Check for parser errors
-                        const parserError = xmlDoc.getElementsByTagName('parsererror');
-                        if (parserError.length > 0) {
-                            throw new Error('Failed to parse ArXiv API response');
-                        }
-                        
-                        const entries = xmlDoc.getElementsByTagName('entry');
-                        
-                        if (entries.length > 0) {
-                            hasResults = true;
-                            processEntries(entries);
-                        }
-                        
-                        // Stop if we've reached the requested number of results or if we got fewer results than batch size
-                        if (searchResults.length >= requestedResults || entries.length < BATCH_SIZE) {
-                            break;
-                        }
-                        
-                        // Small delay to avoid hammering the API
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                    } catch (error) {
-                        console.error(`Error fetching batch ${i+1}:`, error);
-                        // Continue with next batch instead of breaking completely
                     }
+                    
+                    // Small delay to avoid hammering the API
+                    await new Promise(resolve => setTimeout(resolve, 300));
                 }
                 
-                if (!hasResults) {
-                    searchMessage.textContent = 'No results found. Try different search terms.';
+                if (!hasResults && !append) {
+                    searchMessage.textContent = 'No results found. Try different search terms or filters.';
                     searchMessage.classList.remove('hidden');
-                    saveAllContainer.classList.add('hidden');
+                    resultsControls.classList.add('hidden');
+                    loadMoreContainer.classList.add('hidden');
                 } else {
-                    renderSearchResults();
-                    saveAllContainer.classList.remove('hidden');
+                    // Apply current sorting and filtering
+                    filterAndSortResults();
+                    
+                    // Show the control bar only if we have results
+                    if (!append) {
+                        resultsControls.classList.remove('hidden');
+                    }
+                    
+                    // Show load more button if there might be more results
+                    loadMoreContainer.classList.toggle('hidden', !hasMoreResults || searchResults.length >= requestedResults);
                     
                     // Show total results count
                     resultsCountDisplay.textContent = `Found ${searchResults.length} results`;
                     resultsInfo.classList.remove('hidden');
                 }
+                
             } catch (error) {
-                console.error('Search error:', error);
-                searchMessage.textContent = `Error: ${error.message || 'Failed to fetch papers. Please try again.'}`;
-                searchMessage.classList.remove('hidden');
-                saveAllContainer.classList.add('hidden');
+                console.error('Error fetching results:', error);
+                if (!append) {
+                    searchMessage.textContent = `Error: ${error.message || 'Failed to fetch papers'}`;
+                    searchMessage.classList.remove('hidden');
+                }
             } finally {
                 // Reset loading spinner to original state
                 loading.innerHTML = '<div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>';
                 loading.classList.add('hidden');
+                isLoading = false;
             }
+        }
+        
+        // Load more results button
+        loadMoreBtn.addEventListener('click', async () => {
+            currentResultsPage++;
+            await fetchSearchResults(searchInput.value.trim(), true);
         });
         
-        // Render search results
-        function renderSearchResults() {
+        // Implement virtual scrolling with Intersection Observer
+        const setupVirtualScrolling = () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !isLoading && searchResults.length > 0) {
+                        // Check if we need to load more results
+                        if (displayedResults.length < filteredResults.length) {
+                            renderMoreResults();
+                        } else if (loadMoreContainer.classList.contains('hidden') === false) {
+                            // If we still have more results to fetch, trigger loadMoreBtn
+                            loadMoreBtn.click();
+                        }
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '100px',
+                threshold: 0.1
+            });
+            
+            observer.observe(virtualScrollObserver);
+        };
+        
+        // Render more results with virtual scrolling
+        function renderMoreResults() {
+            if (displayedResults.length >= filteredResults.length) return;
+            
+            const startIdx = displayedResults.length;
+            const endIdx = Math.min(startIdx + RESULTS_PER_PAGE, filteredResults.length);
+            const batch = filteredResults.slice(startIdx, endIdx);
+            
+            batch.forEach(paper => {
+                displayedResults.push(paper);
+                const paperElement = createPaperElement(paper);
+                searchResultsElement.appendChild(paperElement);
+            });
+        }
+        
+        // Filter and sort search results based on current filters
+        function filterAndSortResults() {
+            const filterQuery = filterResultsInput.value.toLowerCase().trim();
+            const sortOption = sortResultsSelect.value;
+            
+            // Apply filter
+            if (filterQuery) {
+                filteredResults = searchResults.filter(paper => {
+                    return paper.title.toLowerCase().includes(filterQuery) ||
+                           paper.authorsStr.toLowerCase().includes(filterQuery) ||
+                           paper.summary.toLowerCase().includes(filterQuery) ||
+                           paper.categoriesStr.toLowerCase().includes(filterQuery);
+                });
+            } else {
+                filteredResults = [...searchResults];
+            }
+            
+            // Apply sorting
+            sortPapers(filteredResults, sortOption);
+            
+            // Reset displayed results
+            displayedResults = [];
             searchResultsElement.innerHTML = '';
             
-            searchResults.forEach(paper => {
-                const isSaved = savedPapers.some(p => p.id === paper.id);
-                
-                const paperElement = document.createElement('div');
-                paperElement.className = 'bg-white dark:bg-gray-800 p-2 rounded shadow-sm text-sm';
-                
-                // Create collapsible section for paper details
-                const detailsId = `details-${paper.id}`;
-                
-                paperElement.innerHTML = `
-                    <div class="flex items-center">
-                        <div class="truncate flex-grow">
-                            <span class="font-medium dark:text-white">${paper.title}</span>
-                        </div>
-                        <div class="flex items-center ml-2 flex-shrink-0 space-x-1">
-                            <button class="details-toggle text-primary" data-target="${detailsId}">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <a href="${paper.link}" target="_blank" class="text-primary hover:underline ml-1" title="View on arXiv">
-                                <i class="fas fa-external-link-alt"></i>
-                            </a>
-                            <a href="${paper.pdfLink}" target="_blank" class="text-primary hover:underline ml-1" title="PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                            <button class="save-button ml-1 ${isSaved ? 'text-yellow-500' : 'text-gray-400 dark:text-gray-500'}" data-id="${paper.id}" title="${isSaved ? 'Remove from library' : 'Save to library'}">
+            // Render first batch
+            renderMoreResults();
+        }
+        
+        // Add filter and sort handlers
+        filterResultsInput.addEventListener('input', debounce(() => {
+            filterAndSortResults();
+        }, 300));
+        
+        sortResultsSelect.addEventListener('change', () => {
+            filterAndSortResults();
+        });
+        
+        librarySearchInput.addEventListener('input', debounce(() => {
+            filterLibrary();
+        }, 300));
+        
+        sortLibrarySelect.addEventListener('change', () => {
+            filterLibrary();
+        });
+        
+        // Sort papers based on option
+        function sortPapers(papers, sortOption) {
+            switch (sortOption) {
+                case 'date-desc':
+                    papers.sort((a, b) => {
+                        if (!a.publishedDate) return 1;
+                        if (!b.publishedDate) return -1;
+                        return b.publishedDate - a.publishedDate;
+                    });
+                    break;
+                case 'date-asc':
+                    papers.sort((a, b) => {
+                        if (!a.publishedDate) return 1;
+                        if (!b.publishedDate) return -1;
+                        return a.publishedDate - b.publishedDate;
+                    });
+                    break;
+                case 'title-asc':
+                    papers.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+                case 'title-desc':
+                    papers.sort((a, b) => b.title.localeCompare(a.title));
+                    break;
+                // The default 'relevance' keeps the original order
+            }
+        }
+        
+        // Create paper element (for search results or library)
+        function createPaperElement(paper, isLibrary = false) {
+            const isSaved = savedPapers.some(p => p.id === paper.id);
+            
+            const paperElement = document.createElement('div');
+            paperElement.className = 'bg-white dark:bg-gray-800 p-2 rounded shadow-sm text-sm transition-colors duration-150';
+            
+            // Create collapsible section for paper details
+            const detailsId = `${isLibrary ? 'library' : 'details'}-${paper.id}-${Date.now()}`;
+            
+            paperElement.innerHTML = `
+                <div class="flex items-start">
+                    <div class="truncate flex-grow">
+                        <span class="font-medium dark:text-white">${paper.title}</span>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">${paper.authorsStr || 'No authors'}</div>
+                    </div>
+                    <div class="flex items-center ml-2 flex-shrink-0 space-x-1">
+                        <button class="details-toggle text-primary p-1" data-target="${detailsId}" aria-label="Toggle details">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <a href="${paper.link}" target="_blank" class="text-primary hover:underline p-1" title="View on arXiv">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        <a href="${paper.pdfLink}" target="_blank" class="text-primary hover:underline p-1" title="PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                        ${isLibrary ? 
+                            `<button class="remove-button p-1 text-red-500" data-id="${paper.id}" title="Remove from library">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>` : 
+                            `<button class="save-button p-1 ${isSaved ? 'text-yellow-500' : 'text-gray-400 dark:text-gray-500'}" data-id="${paper.id}" title="${isSaved ? 'Remove from library' : 'Save to library'}">
                                 <i class="fas fa-star"></i>
-                            </button>
-                        </div>
+                            </button>`
+                        }
                     </div>
-                    <div id="${detailsId}" class="mt-2 hidden">
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                            <span class="font-semibold">Authors:</span> ${paper.authorsStr || 'N/A'}
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                            <span class="font-semibold">Published:</span> ${paper.published || 'N/A'} 
-                            ${paper.updated && paper.updated !== paper.published ? `<span class="font-semibold ml-2">Updated:</span> ${paper.updated}` : ''}
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                            <span class="font-semibold">Categories:</span> ${paper.categoriesStr || 'N/A'}
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-2 border-t pt-1 dark:border-gray-700">
-                            <div class="font-semibold mb-1">Abstract:</div>
-                            <p class="whitespace-pre-line">${paper.summary || 'No abstract available'}</p>
-                        </div>
+                </div>
+                <div id="${detailsId}" class="mt-2 hidden overflow-hidden">
+                    <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                        <span class="font-semibold">Published:</span> ${paper.published || 'N/A'} 
+                        ${paper.updated && paper.updated !== paper.published ? `<span class="font-semibold ml-2">Updated:</span> ${paper.updated}` : ''}
                     </div>
-                `;
-                
-                searchResultsElement.appendChild(paperElement);
-                
-                // Add save button functionality
+                    <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                        <span class="font-semibold">Categories:</span> ${paper.categoriesStr || 'N/A'}
+                    </div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-2 border-t pt-1 dark:border-gray-700">
+                        <div class="font-semibold mb-1">Abstract:</div>
+                        <p class="whitespace-pre-line">${paper.summary || 'No abstract available'}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Add button functionality
+            if (isLibrary) {
+                const removeButton = paperElement.querySelector('.remove-button');
+                removeButton.addEventListener('click', () => {
+                    removePaperFromLibrary(paper.id);
+                });
+            } else {
                 const saveButton = paperElement.querySelector('.save-button');
                 saveButton.addEventListener('click', () => {
                     toggleSavePaper(paper, saveButton);
                 });
+            }
+            
+            // Add details toggle functionality
+            const detailsToggle = paperElement.querySelector('.details-toggle');
+            const detailsSection = paperElement.querySelector(`#${detailsId}`);
+            
+            detailsToggle.addEventListener('click', () => {
+                const isHidden = detailsSection.classList.contains('hidden');
                 
-                // Add details toggle functionality
-                const detailsToggle = paperElement.querySelector('.details-toggle');
-                const detailsSection = paperElement.querySelector(`#${detailsId}`);
-                
-                detailsToggle.addEventListener('click', () => {
-                    const isHidden = detailsSection.classList.contains('hidden');
+                // Toggle icon and visibility
+                if (isHidden) {
+                    detailsSection.classList.remove('hidden');
+                    detailsToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
                     
-                    // Toggle icon and visibility
-                    if (isHidden) {
-                        detailsSection.classList.remove('hidden');
-                        detailsToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
-                    } else {
+                    // Add animation
+                    detailsSection.style.maxHeight = '0';
+                    setTimeout(() => {
+                        detailsSection.style.maxHeight = detailsSection.scrollHeight + 'px';
+                    }, 10);
+                } else {
+                    detailsToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    detailsSection.style.maxHeight = '0';
+                    
+                    // Add delay before hiding to allow animation to complete
+                    setTimeout(() => {
                         detailsSection.classList.add('hidden');
-                        detailsToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
-                    }
-                });
+                        detailsSection.style.maxHeight = null;
+                    }, 200);
+                }
             });
+            
+            return paperElement;
         }
         
         // Toggle save/unsave paper
@@ -553,23 +1196,53 @@
                 button.classList.remove('text-gray-400', 'dark:text-gray-500');
                 button.classList.add('text-yellow-500');
                 button.title = 'Remove from library';
+                
+                // Show save feedback
+                showNotification(`Saved "${truncateString(paper.title, 30)}" to library`);
             } else {
                 // Remove from saved
                 savedPapers.splice(index, 1);
                 button.classList.add('text-gray-400', 'dark:text-gray-500');
                 button.classList.remove('text-yellow-500');
                 button.title = 'Save to library';
+                
+                // Show remove feedback
+                showNotification(`Removed "${truncateString(paper.title, 30)}" from library`, 'warning');
             }
             
             // Update saved count
             savePapersToStorage();
         }
         
+        // Remove paper from library
+        function removePaperFromLibrary(paperId) {
+            const index = savedPapers.findIndex(p => p.id === paperId);
+            
+            if (index !== -1) {
+                const paper = savedPapers[index];
+                savedPapers.splice(index, 1);
+                savePapersToStorage();
+                filterLibrary();
+                
+                // Update button in search results if visible
+                const saveButton = document.querySelector(`.save-button[data-id="${paperId}"]`);
+                if (saveButton) {
+                    saveButton.classList.add('text-gray-400', 'dark:text-gray-500');
+                    saveButton.classList.remove('text-yellow-500');
+                }
+                
+                // Show remove feedback
+                showNotification(`Removed "${truncateString(paper.title, 30)}" from library`, 'warning');
+            }
+        }
+        
         // Save all results
         saveAllBtn.addEventListener('click', () => {
             let added = 0;
+            let alreadySaved = 0;
             
-            searchResults.forEach(paper => {
+            // Use filtered results instead of all search results
+            filteredResults.forEach(paper => {
                 if (!savedPapers.some(p => p.id === paper.id)) {
                     savedPapers.push(paper);
                     added++;
@@ -580,6 +1253,8 @@
                         saveButton.classList.remove('text-gray-400', 'dark:text-gray-500');
                         saveButton.classList.add('text-yellow-500');
                     }
+                } else {
+                    alreadySaved++;
                 }
             });
             
@@ -587,22 +1262,72 @@
             savePapersToStorage();
             
             if (added > 0) {
-                // Show message without alert
-                const messageElement = document.createElement('div');
-                messageElement.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
-                messageElement.textContent = `Added ${added} papers to your library`;
-                document.body.appendChild(messageElement);
-                
-                // Remove after 3 seconds
-                setTimeout(() => {
-                    document.body.removeChild(messageElement);
-                }, 3000);
+                let message = `Added ${added} papers to your library`;
+                if (alreadySaved > 0) {
+                    message += ` (${alreadySaved} already saved)`;
+                }
+                showNotification(message, 'success');
+            } else if (alreadySaved > 0) {
+                showNotification(`All ${alreadySaved} papers were already in your library`, 'info');
             }
         });
         
+        // Show notification
+        function showNotification(message, type = 'success') {
+            // Remove any existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => {
+                document.body.removeChild(notification);
+            });
+            
+            const typeClasses = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'warning': 'bg-yellow-500',
+                'info': 'bg-blue-500'
+            };
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `notification fixed bottom-4 right-4 ${typeClasses[type] || 'bg-gray-800'} text-white px-4 py-2 rounded shadow-lg max-w-xs z-50`;
+            messageElement.textContent = message;
+            document.body.appendChild(messageElement);
+            
+            // Animate in
+            messageElement.style.opacity = '0';
+            messageElement.style.transform = 'translateY(20px)';
+            messageElement.style.transition = 'opacity 0.3s, transform 0.3s';
+            
+            setTimeout(() => {
+                messageElement.style.opacity = '1';
+                messageElement.style.transform = 'translateY(0)';
+            }, 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                messageElement.style.opacity = '0';
+                messageElement.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    if (document.body.contains(messageElement)) {
+                        document.body.removeChild(messageElement);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Truncate string with ellipsis
+        function truncateString(str, maxLength) {
+            if (str.length > maxLength) {
+                return str.substring(0, maxLength) + '...';
+            }
+            return str;
+        }
+        
         // Render library
-        function renderLibrary() {
-            if (savedPapers.length === 0) {
+        function renderLibrary(papers = null) {
+            const papersToRender = papers || savedPapers;
+            
+            if (papersToRender.length === 0) {
                 libraryEmpty.classList.remove('hidden');
                 libraryItems.classList.add('hidden');
                 exportBtn.disabled = true;
@@ -615,87 +1340,9 @@
             
             libraryItems.innerHTML = '';
             
-            savedPapers.forEach(paper => {
-                const paperElement = document.createElement('div');
-                paperElement.className = 'bg-white dark:bg-gray-800 p-2 rounded shadow-sm text-sm';
-                
-                // Create collapsible section for paper details
-                const detailsId = `library-details-${paper.id}`;
-                
-                paperElement.innerHTML = `
-                    <div class="flex items-center">
-                        <div class="truncate flex-grow">
-                            <span class="font-medium dark:text-white">${paper.title}</span>
-                        </div>
-                        <div class="flex items-center ml-2 flex-shrink-0 space-x-1">
-                            <button class="details-toggle text-primary" data-target="${detailsId}">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <a href="${paper.link}" target="_blank" class="text-primary hover:underline ml-1" title="View on arXiv">
-                                <i class="fas fa-external-link-alt"></i>
-                            </a>
-                            <a href="${paper.pdfLink}" target="_blank" class="text-primary hover:underline ml-1" title="PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                            <button class="remove-button ml-1 text-red-500" data-id="${paper.id}" title="Remove from library">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="${detailsId}" class="mt-2 hidden">
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                            <span class="font-semibold">Authors:</span> ${paper.authorsStr || 'N/A'}
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                            <span class="font-semibold">Published:</span> ${paper.published || 'N/A'} 
-                            ${paper.updated && paper.updated !== paper.published ? `<span class="font-semibold ml-2">Updated:</span> ${paper.updated}` : ''}
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                            <span class="font-semibold">Categories:</span> ${paper.categoriesStr || 'N/A'}
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-2 border-t pt-1 dark:border-gray-700">
-                            <div class="font-semibold mb-1">Abstract:</div>
-                            <p class="whitespace-pre-line">${paper.summary || 'No abstract available'}</p>
-                        </div>
-                    </div>
-                `;
-                
+            papersToRender.forEach(paper => {
+                const paperElement = createPaperElement(paper, true);
                 libraryItems.appendChild(paperElement);
-                
-                // Add remove button functionality
-                const removeButton = paperElement.querySelector('.remove-button');
-                removeButton.addEventListener('click', () => {
-                    const index = savedPapers.findIndex(p => p.id === paper.id);
-                    if (index !== -1) {
-                        savedPapers.splice(index, 1);
-                        savePapersToStorage();
-                        renderLibrary();
-                        
-                        // Update button in search results if visible
-                        const saveButton = document.querySelector(`.save-button[data-id="${paper.id}"]`);
-                        if (saveButton) {
-                            saveButton.classList.add('text-gray-400', 'dark:text-gray-500');
-                            saveButton.classList.remove('text-yellow-500');
-                        }
-                    }
-                });
-                
-                // Add details toggle functionality
-                const detailsToggle = paperElement.querySelector('.details-toggle');
-                const detailsSection = paperElement.querySelector(`#${detailsId}`);
-                
-                detailsToggle.addEventListener('click', () => {
-                    const isHidden = detailsSection.classList.contains('hidden');
-                    
-                    // Toggle icon and visibility
-                    if (isHidden) {
-                        detailsSection.classList.remove('hidden');
-                        detailsToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
-                    } else {
-                        detailsSection.classList.add('hidden');
-                        detailsToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
-                    }
-                });
             });
         }
         
@@ -744,44 +1391,80 @@
 }`;
         }
         
-        // Export functionality
-        exportBtn.addEventListener('click', () => {
+        // Export dropdown toggle
+        exportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportDropdown.classList.toggle('hidden');
+        });
+        
+        // Export functions
+        function exportLibrary(format) {
             if (savedPapers.length === 0) return;
             
             let content = '';
-            const format = exportFormat.value;
+            let title = '';
             
-            if (format === 'csv') {
-                // Create CSV format with more details
-                content = 'Title,Authors,Published,Updated,Categories,ArXiv ID,URL,PDF URL\n';
-                
-                savedPapers.forEach(paper => {
-                    // Properly escape fields for CSV
-                    const escapeCsv = (str) => `"${(str || '').replace(/"/g, '""')}"`;
+            // Show loading modal
+            const loadingModal = document.createElement('div');
+            loadingModal.className = 'modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+            loadingModal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded max-w-md w-full p-4 text-center">
+                    <h2 class="text-xl font-bold dark:text-white mb-4">Preparing Export</h2>
+                    <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="text-gray-600 dark:text-gray-300">Formatting your library data...</p>
+                </div>
+            `;
+            document.body.appendChild(loadingModal);
+            
+            // Use setTimeout to allow the loading modal to render
+            setTimeout(() => {
+                try {
+                    if (format === 'csv') {
+                        // Create CSV format with more details
+                        title = 'CSV Format';
+                        content = 'Title,Authors,Published,Updated,Categories,ArXiv ID,URL,PDF URL\n';
+                        
+                        savedPapers.forEach(paper => {
+                            // Properly escape fields for CSV
+                            const escapeCsv = (str) => `"${(str || '').replace(/"/g, '""')}"`;
+                            
+                            content += [
+                                escapeCsv(paper.title),
+                                escapeCsv(paper.authorsStr),
+                                escapeCsv(paper.published),
+                                escapeCsv(paper.updated),
+                                escapeCsv(paper.categoriesStr),
+                                escapeCsv(paper.id),
+                                paper.link,
+                                paper.pdfLink
+                            ].join(',') + '\n';
+                        });
+                    } else if (format === 'bibtex') {
+                        // Create BibTeX format
+                        title = 'BibTeX Format';
+                        content = savedPapers.map(generateBibTeX).join('\n\n');
+                    }
                     
-                    content += [
-                        escapeCsv(paper.title),
-                        escapeCsv(paper.authorsStr),
-                        escapeCsv(paper.published),
-                        escapeCsv(paper.updated),
-                        escapeCsv(paper.categoriesStr),
-                        escapeCsv(paper.id),
-                        paper.link,
-                        paper.pdfLink
-                    ].join(',') + '\n';
-                });
-            } else if (format === 'bibtex') {
-                // Create BibTeX format
-                content = savedPapers.map(generateBibTeX).join('\n\n');
-            }
-            
-            // Create modal for displaying export
+                    // Remove loading modal
+                    document.body.removeChild(loadingModal);
+                    
+                    // Create modal for displaying export
+                    showExportModal(title, content, format);
+                } catch (error) {
+                    console.error('Export error:', error);
+                    document.body.removeChild(loadingModal);
+                    showNotification('Export failed: ' + error.message, 'error');
+                }
+            }, 100);
+        }
+        
+        function showExportModal(title, content, format) {
             const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+            modal.className = 'modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
             modal.innerHTML = `
-                <div class="bg-white dark:bg-gray-800 rounded max-w-2xl w-full p-4 max-h-[80vh] overflow-auto">
+                <div class="bg-white dark:bg-gray-800 rounded max-w-2xl w-full p-4 max-h-[80vh] flex flex-col">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold dark:text-white">Exported Papers (${format.toUpperCase()})</h2>
+                        <h2 class="text-xl font-bold dark:text-white">Exported Papers (${title})</h2>
                         <button id="close-modal" class="text-gray-600 dark:text-gray-400">
                             <i class="fas fa-times"></i>
                         </button>
@@ -794,7 +1477,9 @@
                             <i class="fas fa-copy mr-1"></i> Copy to Clipboard
                         </button>
                     </div>
-                    <pre class="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm overflow-auto whitespace-pre-wrap dark:text-gray-300">${content}</pre>
+                    <div class="flex-grow overflow-auto">
+                        <pre class="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm whitespace-pre-wrap dark:text-gray-300 h-full">${content}</pre>
+                    </div>
                 </div>
             `;
             
@@ -831,13 +1516,50 @@
                         }, 2000);
                     });
             });
+        }
+        
+        // Export button handlers
+        exportCsvBtn.addEventListener('click', () => {
+            exportLibrary('csv');
+            exportDropdown.classList.add('hidden');
         });
         
-        // Load saved papers on page load
-        loadSavedPapers();
+        exportBibtexBtn.addEventListener('click', () => {
+            exportLibrary('bibtex');
+            exportDropdown.classList.add('hidden');
+        });
         
-        // Load search history on page load
+        // Debounce function for search inputs
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // Initialize
+        loadSavedPapers();
         loadSearchHistory();
+        setupVirtualScrolling();
+        
+        // Set default dates if empty
+        if (!fromDateInput.value) {
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            fromDateInput.valueAsDate = oneYearAgo;
+        }
+        
+        if (!toDateInput.value) {
+            toDateInput.valueAsDate = new Date();
+        }
+        
+        // Auto-focus search input on load
+        searchInput.focus();
     </script>
 </body>
 </html>
