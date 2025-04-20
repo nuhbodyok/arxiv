@@ -285,6 +285,17 @@
         </div>
     </div>
 
+    <!-- Response Debug Panel (for development) -->
+    <div id="debug-panel" class="fixed bottom-0 right-0 bg-white dark:bg-gray-900 p-2 border-t border-l dark:border-gray-700 text-xs max-w-md max-h-40 overflow-auto hidden">
+        <div class="flex justify-between mb-1">
+            <span class="font-bold">API Response Debug</span>
+            <button id="close-debug" class="text-gray-600 dark:text-gray-400">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <pre id="debug-content" class="text-xs"></pre>
+    </div>
+
     <script>
         // State management
         let savedPapers = [];
@@ -298,6 +309,13 @@
         const RESULTS_PER_PAGE = 20;
         let currentResultsPage = 1;
         let isLoading = false;
+        
+        // CORS proxy configuration
+        const USE_CORS_PROXY = true;
+        const CORS_PROXY_URL = 'https://corsproxy.io/?';
+        
+        // For debugging - toggle this to show/hide response debug panel
+        const DEBUG_MODE = false;
         
         // DOM Elements
         const searchInput = document.getElementById('search-input');
@@ -343,6 +361,47 @@
         const helpButton = document.getElementById('help-button');
         const helpModal = document.getElementById('help-modal');
         const closeHelpModalBtn = document.getElementById('close-help-modal');
+        const debugPanel = document.getElementById('debug-panel');
+        const debugContent = document.getElementById('debug-content');
+        const closeDebugBtn = document.getElementById('close-debug');
+        
+        // Debug functions
+        if (DEBUG_MODE) {
+            debugPanel.classList.remove('hidden');
+        }
+        
+        closeDebugBtn.addEventListener('click', () => {
+            debugPanel.classList.add('hidden');
+        });
+        
+        function logDebug(message, data) {
+            if (DEBUG_MODE) {
+                const timestamp = new Date().toLocaleTimeString();
+                let logMessage = `[${timestamp}] ${message}\n`;
+                
+                if (data) {
+                    if (typeof data === 'string') {
+                        logMessage += data + '\n';
+                    } else {
+                        try {
+                            logMessage += JSON.stringify(data, null, 2) + '\n';
+                        } catch (e) {
+                            logMessage += '[Object cannot be stringified]\n';
+                        }
+                    }
+                }
+                
+                debugContent.textContent += logMessage;
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+        }
+        
+        // Helper function to create safe element IDs
+        function createSafeId(prefix, paperId, suffix = '') {
+            // Replace dots, slashes, and other special characters
+            const safeId = paperId.replace(/[.\/\-+:]/g, '_');
+            return `${prefix}-${safeId}${suffix ? '-' + suffix : ''}`;
+        }
         
         // Help Modal
         helpButton.addEventListener('click', () => {
@@ -653,122 +712,195 @@
         
         // Create URL for ArXiv API with all filters
         function createArxivApiUrl(query, start, maxResults) {
-            let url = `https://export.arxiv.org/api/query?start=${start}&max_results=${maxResults}`;
+            // Base URL with start and max_results parameters
+            let baseUrl = `https://export.arxiv.org/api/query?start=${start}&max_results=${maxResults}`;
             
             // Add search query with field specifiers
+            let searchQueryParts = [];
+            
+            // Get selected search fields
             const selectedFields = Array.from(searchFieldCheckboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
             
-            // If "all" is selected, just use the query without field specifiers
-            if (selectedFields.includes('all')) {
-                url += `&search_query=all:${encodeURIComponent(query)}`;
+            // Process search fields
+            if (selectedFields.includes('all') || selectedFields.length === 0) {
+                // Search in all fields
+                searchQueryParts.push(`all:${encodeURIComponent(query)}`);
             } else {
-                // Build advanced query with field specifiers
-                const queryParts = [];
+                // Build search query with specific fields
+                const fieldQueries = [];
                 
                 if (selectedFields.includes('title')) {
-                    queryParts.push(`ti:${encodeURIComponent(query)}`);
+                    fieldQueries.push(`ti:${encodeURIComponent(query)}`);
                 }
                 
                 if (selectedFields.includes('author')) {
-                    queryParts.push(`au:${encodeURIComponent(query)}`);
+                    fieldQueries.push(`au:${encodeURIComponent(query)}`);
                 }
                 
                 if (selectedFields.includes('abstract')) {
-                    queryParts.push(`abs:${encodeURIComponent(query)}`);
+                    fieldQueries.push(`abs:${encodeURIComponent(query)}`);
                 }
                 
-                // If no fields were selected, default to "all"
-                if (queryParts.length === 0) {
-                    url += `&search_query=all:${encodeURIComponent(query)}`;
-                } else {
-                    url += `&search_query=${queryParts.join('+OR+')}`;
-                }
+                searchQueryParts.push(`(${fieldQueries.join('+OR+')})`);
             }
             
-            // Add category filters
+            // Process category filters
             const selectedCategories = Array.from(categoryCheckboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
             
             if (selectedCategories.length > 0) {
-                url += `+AND+cat:${selectedCategories.join('+OR+cat:')}`;
+                const categoryQuery = selectedCategories.map(cat => `cat:${cat}`).join('+OR+');
+                searchQueryParts.push(`(${categoryQuery})`);
             }
             
-            // Add date range filters
-            let dateFilters = [];
-            
-            if (fromDateInput.value) {
-                const fromDate = new Date(fromDateInput.value);
-                dateFilters.push(`submittedDate:[${fromDate.toISOString().split('T')[0]}000000 TO *]`);
+            // Process date range filters
+            if (fromDateInput.value || toDateInput.value) {
+                let dateQuery = 'submittedDate:';
+                
+                if (fromDateInput.value && toDateInput.value) {
+                    // Both start and end dates specified
+                    const fromDate = new Date(fromDateInput.value);
+                    const toDate = new Date(toDateInput.value);
+                    // Add one day to include the end date fully
+                    toDate.setDate(toDate.getDate() + 1);
+                    
+                    // Format dates as YYYY-MM-DDT00:00:00Z for arXiv API
+                    const fromFormatted = fromDate.toISOString().split('T')[0];
+                    const toFormatted = toDate.toISOString().split('T')[0];
+                    
+                    dateQuery += `[${fromFormatted}0000+TO+${toFormatted}0000]`;
+                } else if (fromDateInput.value) {
+                    // Only start date specified
+                    const fromDate = new Date(fromDateInput.value);
+                    const fromFormatted = fromDate.toISOString().split('T')[0];
+                    dateQuery += `[${fromFormatted}0000+TO+*]`;
+                } else if (toDateInput.value) {
+                    // Only end date specified
+                    const toDate = new Date(toDateInput.value);
+                    // Add one day to include the end date
+                    toDate.setDate(toDate.getDate() + 1);
+                    const toFormatted = toDate.toISOString().split('T')[0];
+                    dateQuery += `[*+TO+${toFormatted}0000]`;
+                }
+                
+                searchQueryParts.push(`(${dateQuery})`);
             }
             
-            if (toDateInput.value) {
-                const toDate = new Date(toDateInput.value);
-                // Add one day to include the end date
-                toDate.setDate(toDate.getDate() + 1);
-                dateFilters.push(`submittedDate:[* TO ${toDate.toISOString().split('T')[0]}000000]`);
+            // Combine all query parts with AND
+            const finalSearchQuery = searchQueryParts.join('+AND+');
+            
+            // Add search query to base URL
+            let finalUrl = `${baseUrl}&search_query=${finalSearchQuery}`;
+            
+            logDebug("Generated ArXiv API URL:", finalUrl);
+            
+            // Apply CORS proxy if enabled
+            if (USE_CORS_PROXY) {
+                finalUrl = CORS_PROXY_URL + encodeURIComponent(finalUrl);
+                logDebug("Applied CORS proxy, final URL:", finalUrl);
             }
             
-            if (dateFilters.length > 0) {
-                url += `+AND+${dateFilters.join('+AND+')}`;
-            }
-            
-            return url;
+            return finalUrl;
         }
         
         // Extract more detailed information from ArXiv entry
         function extractPaperDetails(entry) {
-            const id = entry.getElementsByTagName('id')[0]?.textContent || '';
-            const arxivId = id.split('/').pop();
-            const title = entry.getElementsByTagName('title')[0]?.textContent || 'No title';
-            const summary = entry.getElementsByTagName('summary')[0]?.textContent || '';
-            const published = entry.getElementsByTagName('published')[0]?.textContent || '';
-            const updated = entry.getElementsByTagName('updated')[0]?.textContent || '';
-            
-            // Extract authors
-            const authorElements = entry.getElementsByTagName('author');
-            const authors = Array.from(authorElements).map(author => {
-                return author.getElementsByTagName('name')[0]?.textContent || '';
-            });
-            
-            // Extract categories
-            const categories = [];
-            const categoryElements = entry.getElementsByTagName('category');
-            for (let i = 0; i < categoryElements.length; i++) {
-                const term = categoryElements[i].getAttribute('term');
-                if (term) categories.push(term);
-            }
-            
-            // Format date for display
-            const formatDate = (dateStr) => {
-                if (!dateStr) return '';
-                try {
-                    const date = new Date(dateStr);
-                    return date.toLocaleDateString();
-                } catch (e) {
-                    return dateStr;
+            try {
+                const id = entry.getElementsByTagName('id')[0]?.textContent || '';
+                let arxivId = id.split('/').pop() || '';
+                // Handle potential versioning in the ID (remove version number if present)
+                arxivId = arxivId.split('v')[0];
+                
+                const title = entry.getElementsByTagName('title')[0]?.textContent.trim() || 'No title';
+                const summary = entry.getElementsByTagName('summary')[0]?.textContent.trim() || '';
+                const published = entry.getElementsByTagName('published')[0]?.textContent || '';
+                const updated = entry.getElementsByTagName('updated')[0]?.textContent || '';
+                
+                // Extract authors
+                const authorElements = entry.getElementsByTagName('author');
+                const authors = Array.from(authorElements).map(author => {
+                    return author.getElementsByTagName('name')[0]?.textContent.trim() || '';
+                });
+                
+                // Extract categories
+                const categories = [];
+                const categoryElements = entry.getElementsByTagName('category');
+                for (let i = 0; i < categoryElements.length; i++) {
+                    const term = categoryElements[i].getAttribute('term');
+                    if (term) categories.push(term);
                 }
-            };
-            
-            // For sorting
-            const publishedDate = published ? new Date(published) : null;
-            
-            return {
-                id: arxivId,
-                title: title,
-                link: `https://arxiv.org/abs/${arxivId}`,
-                pdfLink: `https://arxiv.org/pdf/${arxivId}.pdf`,
-                summary: summary,
-                published: formatDate(published),
-                updated: formatDate(updated),
-                publishedDate: publishedDate,
-                authors: authors,
-                categories: categories,
-                authorsStr: authors.join(', '),
-                categoriesStr: categories.join(', ')
-            };
+                
+                // Format date for display
+                const formatDate = (dateStr) => {
+                    if (!dateStr) return '';
+                    try {
+                        const date = new Date(dateStr);
+                        return date.toLocaleDateString();
+                    } catch (e) {
+                        console.error('Error formatting date:', e);
+                        return dateStr;
+                    }
+                };
+                
+                // Find pdf_url and other links
+                const linkElements = entry.getElementsByTagName('link');
+                let pdfLink = '';
+                
+                for (let i = 0; i < linkElements.length; i++) {
+                    const linkType = linkElements[i].getAttribute('type');
+                    const href = linkElements[i].getAttribute('href') || '';
+                    
+                    if (linkType === 'application/pdf') {
+                        pdfLink = href;
+                        break;
+                    }
+                }
+                
+                // If we didn't find a PDF link, construct one
+                if (!pdfLink && arxivId) {
+                    pdfLink = `https://arxiv.org/pdf/${arxivId}.pdf`;
+                }
+                
+                // For sorting
+                const publishedDate = published ? new Date(published) : null;
+                
+                return {
+                    id: arxivId,
+                    title: title,
+                    link: `https://arxiv.org/abs/${arxivId}`,
+                    pdfLink: pdfLink,
+                    summary: summary,
+                    published: formatDate(published),
+                    updated: formatDate(updated),
+                    publishedDate: publishedDate,
+                    authors: authors,
+                    categories: categories,
+                    authorsStr: authors.join(', '),
+                    categoriesStr: categories.join(', ')
+                };
+            } catch (error) {
+                console.error('Error extracting paper details:', error);
+                logDebug('Error parsing entry:', error.message);
+                
+                // Return minimal information to avoid breaking the application
+                return {
+                    id: 'unknown-' + Math.random().toString(36).substring(2, 10),
+                    title: 'Error processing paper',
+                    link: '#',
+                    pdfLink: '#',
+                    summary: 'There was an error processing this paper. Please try again.',
+                    published: '',
+                    updated: '',
+                    publishedDate: null,
+                    authors: [],
+                    categories: [],
+                    authorsStr: '',
+                    categoriesStr: ''
+                };
+            }
         }
         
         // Search function with pagination
@@ -801,11 +933,18 @@
                 resultsControls.classList.add('hidden');
                 loadMoreContainer.classList.add('hidden');
                 
+                // Clear debug panel if in debug mode
+                if (DEBUG_MODE) {
+                    debugContent.textContent = '';
+                    logDebug('Starting new search', { query });
+                }
+                
                 // Get requested number of results and start fetching
                 await fetchSearchResults(query);
                 
             } catch (error) {
                 console.error('Search error:', error);
+                logDebug('Search failed with error:', error.message);
                 searchMessage.textContent = `Error: ${error.message || 'Failed to fetch papers. Please try again.'}`;
                 searchMessage.classList.remove('hidden');
             } finally {
@@ -866,12 +1005,15 @@
                     
                     while (retries < MAX_RETRIES && !success) {
                         try {
+                            logDebug(`Fetching batch ${i+1} (retry ${retries})`, { url });
+                            
                             // Fetch results
                             const response = await fetch(url);
                             
                             if (!response.ok) {
                                 if (response.status === 429) {
                                     // Rate limited, wait and retry
+                                    logDebug('Rate limited, waiting to retry');
                                     await new Promise(resolve => setTimeout(resolve, 2000));
                                     retries++;
                                     continue;
@@ -881,6 +1023,14 @@
                             
                             const data = await response.text();
                             
+                            // For debugging, log a sample of the response
+                            if (DEBUG_MODE) {
+                                const sample = data.length > 500 ? 
+                                    data.substring(0, 200) + "..." + data.substring(data.length - 200) : 
+                                    data;
+                                logDebug(`Received response (sample):`, sample);
+                            }
+                            
                             // Parse XML
                             const parser = new DOMParser();
                             const xmlDoc = parser.parseFromString(data, 'text/xml');
@@ -888,10 +1038,12 @@
                             // Check for parser errors
                             const parserError = xmlDoc.getElementsByTagName('parsererror');
                             if (parserError.length > 0) {
+                                logDebug('XML parser error:', parserError[0].textContent);
                                 throw new Error('Failed to parse ArXiv API response');
                             }
                             
                             const entries = xmlDoc.getElementsByTagName('entry');
+                            logDebug(`Found ${entries.length} entries in response`);
                             
                             if (entries.length > 0) {
                                 hasResults = true;
@@ -904,11 +1056,7 @@
                                     if (uniqueIds.has(paperDetails.id)) return;
                                     uniqueIds.add(paperDetails.id);
                                     
-                                    if (!append) {
-                                        searchResults.push(paperDetails);
-                                    } else {
-                                        searchResults.push(paperDetails);
-                                    }
+                                    searchResults.push(paperDetails);
                                 });
                                 
                                 // Check if there might be more results
@@ -921,10 +1069,12 @@
                             
                         } catch (error) {
                             console.error(`Error fetching batch ${i+1} (retry ${retries+1}):`, error);
+                            logDebug(`Error fetching batch ${i+1} (retry ${retries+1}):`, error.message);
                             retries++;
                             
                             if (retries >= MAX_RETRIES) {
                                 console.error(`Failed after ${MAX_RETRIES} retries`);
+                                logDebug(`Failed after ${MAX_RETRIES} retries`);
                                 // Continue with next batch instead of breaking completely
                                 success = true; // to exit the while loop
                             } else {
@@ -943,7 +1093,9 @@
                     searchMessage.classList.remove('hidden');
                     resultsControls.classList.add('hidden');
                     loadMoreContainer.classList.add('hidden');
+                    logDebug('Search completed with no results');
                 } else {
+                    logDebug(`Search completed with ${searchResults.length} total results`);
                     // Apply current sorting and filtering
                     filterAndSortResults();
                     
@@ -962,6 +1114,7 @@
                 
             } catch (error) {
                 console.error('Error fetching results:', error);
+                logDebug('Fetch failed with error:', error.message);
                 if (!append) {
                     searchMessage.textContent = `Error: ${error.message || 'Failed to fetch papers'}`;
                     searchMessage.classList.remove('hidden');
@@ -1097,8 +1250,9 @@
             const paperElement = document.createElement('div');
             paperElement.className = 'bg-white dark:bg-gray-800 p-2 rounded shadow-sm text-sm transition-colors duration-150';
             
-            // Create collapsible section for paper details
-            const detailsId = `${isLibrary ? 'library' : 'details'}-${paper.id}-${Date.now()}`;
+            // Create safe ID for details section using our helper function
+            const timestamp = Date.now();
+            const detailsId = createSafeId(isLibrary ? 'library' : 'details', paper.id, timestamp);
             
             paperElement.innerHTML = `
                 <div class="flex items-start">
@@ -1156,9 +1310,15 @@
             
             // Add details toggle functionality
             const detailsToggle = paperElement.querySelector('.details-toggle');
-            const detailsSection = paperElement.querySelector(`#${detailsId}`);
             
             detailsToggle.addEventListener('click', () => {
+                // Use document.getElementById since the element exists in the DOM
+                const detailsSection = document.getElementById(detailsId);
+                if (!detailsSection) {
+                    console.error(`Toggle failed: Cannot find element with ID: ${detailsId}`);
+                    return;
+                }
+                
                 const isHidden = detailsSection.classList.contains('hidden');
                 
                 // Toggle icon and visibility
@@ -1225,7 +1385,7 @@
                 filterLibrary();
                 
                 // Update button in search results if visible
-                const saveButton = document.querySelector(`.save-button[data-id="${paperId}"]`);
+                const saveButton = document.querySelector(`.save-button[data-id="${CSS.escape(paperId)}"]`);
                 if (saveButton) {
                     saveButton.classList.add('text-gray-400', 'dark:text-gray-500');
                     saveButton.classList.remove('text-yellow-500');
@@ -1248,7 +1408,7 @@
                     added++;
                     
                     // Update save button appearance
-                    const saveButton = document.querySelector(`.save-button[data-id="${paper.id}"]`);
+                    const saveButton = document.querySelector(`.save-button[data-id="${CSS.escape(paper.id)}"]`);
                     if (saveButton) {
                         saveButton.classList.remove('text-gray-400', 'dark:text-gray-500');
                         saveButton.classList.add('text-yellow-500');
@@ -1366,7 +1526,7 @@
                 const firstWord = paper.title.split(' ')[0].replace(/[^\w]/g, '');
                 citationKey = `${firstAuthor}${year}${firstWord}`;
             } else {
-                citationKey = `arxiv${paper.id.replace('.', '')}`;
+                citationKey = `arxiv${paper.id.replace(/[.\/]/g, '')}`;
             }
             
             // Escape special characters in title
